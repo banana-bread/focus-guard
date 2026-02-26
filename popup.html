@@ -3,8 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>Focus Guard</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <h1>Focus Guard</h1>
+
+  <div class="add-domain">
+    <input type="text" id="domain-input" placeholder="e.g. reddit.com" />
+    <button id="add-btn">Add</button>
+  </div>
+  <div id="error-msg" class="error" hidden></div>
+
+  <ul id="blocklist"></ul>
+
+  <script src="popup.js" type="module"></script>
 </body>
 </html>

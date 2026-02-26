@@ -237,3 +237,35 @@ h1 img {
   background: #dc2626;
   color: #fff;
 }
+
+/* Settings section */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.setting-row label {
+  font-size: 13px;
+}
+
+.setting-row select,
+.setting-row input[type="number"] {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.setting-row select:focus,
+.setting-row input[type="number"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.setting-row input[type="number"] {
+  width: 80px;
+}

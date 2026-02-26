@@ -33,6 +33,26 @@
     <div id="key-error" class="error" hidden></div>
   </div>
 
+  <hr class="divider">
+
+  <div id="settings-section">
+    <p class="list-label">Settings</p>
+    <div class="setting-row">
+      <label for="unlock-duration">Unlock duration</label>
+      <select id="unlock-duration">
+        <option value="5">5 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="60">60 minutes</option>
+        <option value="custom">Custom...</option>
+      </select>
+    </div>
+    <div id="custom-duration-row" class="setting-row" hidden>
+      <label for="custom-duration">Minutes</label>
+      <input type="number" id="custom-duration" min="1" max="1440" placeholder="e.g. 45">
+    </div>
+  </div>
+
   <script src="popup.js" type="module"></script>
 </body>
 </html>

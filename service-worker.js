@@ -7,6 +7,7 @@ import {
   setUnlock,
   removeUnlock,
   getSettings,
+  updateSettings,
 } from "./lib/storage.js";
 import { syncBlockRules, unlockDomain, relockDomain } from "./lib/blocker.js";
 
@@ -152,6 +153,12 @@ async function handleMessage(message) {
     case "CLEAR_CREDENTIAL": {
       await clearCredential();
       return { success: true };
+    }
+
+    case "UPDATE_SETTINGS": {
+      await updateSettings(payload);
+      const settings = await getSettings();
+      return { settings };
     }
 
     default:

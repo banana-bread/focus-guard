@@ -13,6 +13,9 @@ const keyInfo = document.getElementById("key-info");
 const keyError = document.getElementById("key-error");
 const registerBtn = document.getElementById("register-btn");
 const removeKeyBtn = document.getElementById("remove-key-btn");
+const unlockDurationSelect = document.getElementById("unlock-duration");
+const customDurationRow = document.getElementById("custom-duration-row");
+const customDurationInput = document.getElementById("custom-duration");
 
 let feedbackTimer = null;
 
@@ -92,10 +95,31 @@ function renderKeyState(credential) {
   }
 }
 
+function renderSettings(settings) {
+  const duration = settings.unlockDurationMinutes;
+  const presets = ["5", "15", "30", "60"];
+  if (presets.includes(String(duration))) {
+    unlockDurationSelect.value = String(duration);
+    customDurationRow.hidden = true;
+  } else {
+    unlockDurationSelect.value = "custom";
+    customDurationRow.hidden = false;
+    customDurationInput.value = duration;
+  }
+}
+
+async function saveDuration(minutes) {
+  await chrome.runtime.sendMessage({
+    type: "UPDATE_SETTINGS",
+    payload: { unlockDurationMinutes: minutes },
+  });
+}
+
 async function loadState() {
   const response = await chrome.runtime.sendMessage({ type: "GET_STATE" });
   renderList(response.blocklist);
   renderKeyState(response.credential);
+  renderSettings(response.settings);
 }
 
 async function addDomain() {
@@ -157,5 +181,22 @@ inputEl.addEventListener("keydown", (e) => {
 });
 registerBtn.addEventListener("click", handleRegister);
 removeKeyBtn.addEventListener("click", handleRemoveKey);
+
+unlockDurationSelect.addEventListener("change", () => {
+  if (unlockDurationSelect.value === "custom") {
+    customDurationRow.hidden = false;
+    customDurationInput.focus();
+  } else {
+    customDurationRow.hidden = true;
+    saveDuration(Number(unlockDurationSelect.value));
+  }
+});
+
+customDurationInput.addEventListener("change", () => {
+  const val = parseInt(customDurationInput.value, 10);
+  if (val >= 1 && val <= 1440) {
+    saveDuration(val);
+  }
+});
 
 loadState();

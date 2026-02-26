@@ -22,39 +22,52 @@ const DEFAULT_BLOCKLIST = [
 // All event listeners registered synchronously at top level
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const blocklist = await getBlocklist();
-  if (blocklist.length === 0) {
-    await setBlocklist(DEFAULT_BLOCKLIST);
-    await syncBlockRules(DEFAULT_BLOCKLIST, {});
-  } else {
-    const unlocks = await getUnlocks();
-    await syncBlockRules(blocklist, unlocks);
+  try {
+    const blocklist = await getBlocklist();
+    if (blocklist.length === 0) {
+      await setBlocklist(DEFAULT_BLOCKLIST);
+      await syncBlockRules(DEFAULT_BLOCKLIST, {});
+    } else {
+      const unlocks = await getUnlocks();
+      await syncBlockRules(blocklist, unlocks);
+    }
+  } catch (err) {
+    console.error("Focus Guard: onInstalled error:", err);
   }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const unlocks = await getUnlocks();
-  const now = Date.now();
+  try {
+    const unlocks = await getUnlocks();
+    const now = Date.now();
 
-  // Clean up expired unlocks
-  for (const [domain, data] of Object.entries(unlocks)) {
-    if (data.expiresAt && data.expiresAt <= now) {
-      await relockDomain(domain);
-      await removeUnlock(domain);
+    // Clean up expired unlocks (including missed alarms while browser was closed)
+    for (const [domain, data] of Object.entries(unlocks)) {
+      if (data.expiresAt && data.expiresAt <= now) {
+        await relockDomain(domain);
+        await removeUnlock(domain);
+        await chrome.alarms.clear(`relock:${domain}`);
+      }
     }
-  }
 
-  const blocklist = await getBlocklist();
-  const currentUnlocks = await getUnlocks();
-  await syncBlockRules(blocklist, currentUnlocks);
+    const blocklist = await getBlocklist();
+    const currentUnlocks = await getUnlocks();
+    await syncBlockRules(blocklist, currentUnlocks);
+  } catch (err) {
+    console.error("Focus Guard: onStartup error:", err);
+  }
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  // Alarm names are formatted as "relock:<domain>"
-  if (alarm.name.startsWith("relock:")) {
-    const domain = alarm.name.slice("relock:".length);
-    await relockDomain(domain);
-    await removeUnlock(domain);
+  try {
+    // Alarm names are formatted as "relock:<domain>"
+    if (alarm.name.startsWith("relock:")) {
+      const domain = alarm.name.slice("relock:".length);
+      await relockDomain(domain);
+      await removeUnlock(domain);
+    }
+  } catch (err) {
+    console.error("Focus Guard: onAlarm error:", err);
   }
 });
 
@@ -81,8 +94,15 @@ async function handleMessage(message) {
         blocklist.push(domain);
         await setBlocklist(blocklist);
       }
+      // If domain is currently unlocked, re-lock it
       const unlocks = await getUnlocks();
-      await syncBlockRules(blocklist, unlocks);
+      if (unlocks[domain]) {
+        await relockDomain(domain);
+        await removeUnlock(domain);
+        await chrome.alarms.clear(`relock:${domain}`);
+      }
+      const currentUnlocks = await getUnlocks();
+      await syncBlockRules(blocklist, currentUnlocks);
       return { blocklist };
     }
 
@@ -91,8 +111,15 @@ async function handleMessage(message) {
       const domain = payload.domain;
       blocklist = blocklist.filter((d) => d !== domain);
       await setBlocklist(blocklist);
+      // If domain is currently unlocked, clean up allow rule and alarm
       const unlocks = await getUnlocks();
-      await syncBlockRules(blocklist, unlocks);
+      if (unlocks[domain]) {
+        await relockDomain(domain);
+        await removeUnlock(domain);
+        await chrome.alarms.clear(`relock:${domain}`);
+      }
+      const currentUnlocks = await getUnlocks();
+      await syncBlockRules(blocklist, currentUnlocks);
       return { blocklist };
     }
 

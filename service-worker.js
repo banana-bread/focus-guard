@@ -1,6 +1,8 @@
 import {
   getBlocklist,
   setBlocklist,
+  getCredential,
+  clearCredential,
   getUnlocks,
   setUnlock,
   removeUnlock,
@@ -114,9 +116,15 @@ async function handleMessage(message) {
 
     case "GET_STATE": {
       const blocklist = await getBlocklist();
+      const credential = await getCredential();
       const unlocks = await getUnlocks();
       const settings = await getSettings();
-      return { blocklist, unlocks, settings };
+      return { blocklist, credential, unlocks, settings };
+    }
+
+    case "CLEAR_CREDENTIAL": {
+      await clearCredential();
+      return { success: true };
     }
 
     default:

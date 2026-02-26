@@ -16,6 +16,21 @@
 
   <ul id="blocklist"></ul>
 
+  <hr class="divider">
+
+  <div id="key-section">
+    <div id="key-unregistered" hidden>
+      <p class="key-status">No security key registered</p>
+      <button id="register-btn">Register Security Key</button>
+    </div>
+    <div id="key-registered" hidden>
+      <p class="key-status">Security key registered</p>
+      <div id="key-info" class="key-info"></div>
+      <button id="remove-key-btn" class="btn-danger">Remove Key</button>
+    </div>
+    <div id="key-error" class="error" hidden></div>
+  </div>
+
   <script src="popup.js" type="module"></script>
 </body>
 </html>

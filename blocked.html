@@ -44,6 +44,12 @@
     #unlock-btn:not(:disabled):hover {
       background: #1565c0;
     }
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #e53935;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
@@ -53,7 +59,8 @@
     <p class="domain" id="domain-display"></p>
     <p class="message">This site is blocked by Focus Guard to help you stay focused.</p>
     <button id="unlock-btn" disabled>Unlock with Security Key</button>
+    <p id="status-msg" class="status"></p>
   </div>
-  <script src="blocked.js"></script>
+  <script type="module" src="blocked.js"></script>
 </body>
 </html>

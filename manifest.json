@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Guard",
+  "version": "1.0.0",
+  "description": "Block distracting domains and require a hardware security key to temporarily unlock them.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MhgHcTz6sE2I2sMFnOaPyTq8GFRsECGhIFn2E7KHnMGR4FvcXkYGOuT2Kp5Cq9gLPBqRz2GCfXRyWkaS0RnNCj5vN7i0pLEbaNBLPGEJhXUKlGwvJFF3khCHBsKS4VLbqFRxjO5mT8RhXJPDcFnOYEe0fLoen9pIImDBxC42mlexa9MdFhVJSt7NDBQ0LPAD/B3cTT9MdpcQkRcSiGsrKQCB4NKSD8VY5vEWUH3JMvNBk/LqmDhXSjmT2r+1FLvY/cXNnY4bPnqpGqKosHGSKT3GSGMODKf1kz40cAkHW7e/f3cSQIDAQAB",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

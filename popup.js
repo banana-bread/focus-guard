@@ -5,6 +5,7 @@ const listEl = document.getElementById("blocklist");
 const inputEl = document.getElementById("domain-input");
 const addBtn = document.getElementById("add-btn");
 const errorEl = document.getElementById("error-msg");
+const successEl = document.getElementById("success-msg");
 
 const keyUnregistered = document.getElementById("key-unregistered");
 const keyRegistered = document.getElementById("key-registered");
@@ -13,22 +14,47 @@ const keyError = document.getElementById("key-error");
 const registerBtn = document.getElementById("register-btn");
 const removeKeyBtn = document.getElementById("remove-key-btn");
 
+let feedbackTimer = null;
+
 function showError(msg) {
+  clearFeedback();
   errorEl.textContent = msg;
   errorEl.hidden = false;
+  feedbackTimer = setTimeout(() => autoDismiss(errorEl), 3000);
 }
 
-function clearError() {
+function showSuccess(msg) {
+  clearFeedback();
+  successEl.textContent = msg;
+  successEl.hidden = false;
+  feedbackTimer = setTimeout(() => autoDismiss(successEl), 2000);
+}
+
+function autoDismiss(el) {
+  el.classList.add("feedback-fade");
+  el.addEventListener("animationend", () => {
+    el.hidden = true;
+    el.classList.remove("feedback-fade");
+  }, { once: true });
+}
+
+function clearFeedback() {
+  if (feedbackTimer) clearTimeout(feedbackTimer);
   errorEl.hidden = true;
+  errorEl.classList.remove("feedback-fade");
+  successEl.hidden = true;
+  successEl.classList.remove("feedback-fade");
 }
 
 function showKeyError(msg) {
   keyError.textContent = msg;
   keyError.hidden = false;
+  setTimeout(() => autoDismiss(keyError), 4000);
 }
 
 function clearKeyError() {
   keyError.hidden = true;
+  keyError.classList.remove("feedback-fade");
 }
 
 function renderList(blocklist) {
@@ -73,19 +99,22 @@ async function loadState() {
 }
 
 async function addDomain() {
-  clearError();
+  clearFeedback();
   const raw = inputEl.value;
   const domain = normalizeDomain(raw);
   if (!domain) {
     showError("Invalid domain. Enter something like reddit.com");
     return;
   }
+  addBtn.disabled = true;
   const response = await chrome.runtime.sendMessage({
     type: "ADD_DOMAIN",
     payload: { domain },
   });
+  addBtn.disabled = false;
   renderList(response.blocklist);
   inputEl.value = "";
+  showSuccess(`Added ${domain}`);
 }
 
 async function removeDomain(domain) {

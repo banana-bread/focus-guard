@@ -7,10 +7,10 @@ const unlockBtn = document.getElementById('unlock-btn');
 const statusMsg = document.getElementById('status-msg');
 
 if (domain) {
-  domainDisplay.textContent = `${domain} is blocked by Focus Guard`;
+  domainDisplay.textContent = domain;
   document.title = `${domain} — Blocked`;
 } else {
-  domainDisplay.textContent = 'This site is blocked by Focus Guard';
+  domainDisplay.textContent = 'Unknown site';
 }
 
 // Enable unlock button only if a credential is registered
@@ -45,6 +45,7 @@ unlockBtn.addEventListener('click', async () => {
   } catch (err) {
     unlockBtn.disabled = false;
     unlockBtn.textContent = 'Unlock with Security Key';
+    statusMsg.className = 'status error';
     statusMsg.textContent = err.name === 'NotAllowedError'
       ? 'Verification cancelled.'
       : `Error: ${err.message}`;

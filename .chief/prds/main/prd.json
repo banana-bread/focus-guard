@@ -214,7 +214,8 @@
         "Unlock duration is configurable via settings (default 30 min)"
       ],
       "priority": 13,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-014",
@@ -231,7 +232,8 @@
         "onStartup properly cleans up stale unlocks (e.g., alarm missed while browser was closed)"
       ],
       "priority": 14,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-015",
@@ -247,7 +249,8 @@
         "Proper extension icons (replace placeholders from US-003 if needed)"
       ],
       "priority": 15,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-016",
@@ -261,7 +264,8 @@
         "Existing unlocks are not affected by changing the setting"
       ],
       "priority": 16,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     }
   ]
 }

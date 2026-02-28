@@ -71,7 +71,8 @@
         "Existing normalization behaviour for valid domains is unchanged."
       ],
       "priority": 5,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-006",

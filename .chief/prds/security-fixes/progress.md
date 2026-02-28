@@ -41,6 +41,15 @@
   - `GET_CHALLENGE` also needed normalization so the pendingChallenges Map key matches the key used later in `UNLOCK_DOMAIN`.
 ---
 
+## 2026-02-28 - US-005
+- **What was implemented**: Added stripping of `*`, `^`, and `|` characters in `normalizeDomain()` to prevent crafted input from creating overly broad `declarativeNetRequest` URL filter rules.
+- **Files changed**:
+  - `lib/normalize.js` — added `domain.replace(/[*^|]/g, "")` after the `www.` prefix strip; if removing these chars leaves an invalid domain (no dot, etc.) the existing validation still returns `null`.
+- **Learnings for future iterations:**
+  - The strip-then-validate approach is the right pattern: remove dangerous chars, then let existing validation catch any newly-invalidated domains.
+  - The special chars `*`, `^`, `|` are meaningful in `declarativeNetRequest` URL filters (wildcard, separator, anchor) but have no valid use in a plain domain string.
+---
+
 ## 2026-02-28 - US-004
 - **What was implemented**: Added strict validation for `UPDATE_SETTINGS` payload. The handler now extracts only `unlockDurationMinutes`, validates it as a finite integer in [1, 1440], and returns an error for any invalid value. `updateSettings()` in `lib/storage.js` enforces the same constraint so the check cannot be bypassed by calling storage directly.
 - **Files changed**:

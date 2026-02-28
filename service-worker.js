@@ -12,6 +12,7 @@ import {
 } from "./lib/storage.js";
 import { syncBlockRules, unlockDomain, relockDomain } from "./lib/blocker.js";
 import { verifyAssertionData, base64urlDecode, base64urlEncode } from "./lib/webauthn.js";
+import { normalizeDomain } from "./lib/normalize.js";
 
 // In-memory store for pending WebAuthn challenges, keyed by domain.
 // Challenges are single-use and consumed on first verification attempt.
@@ -96,7 +97,10 @@ async function handleMessage(message) {
 
     case "ADD_DOMAIN": {
       const blocklist = await getBlocklist();
-      const domain = payload.domain;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
       if (!blocklist.includes(domain)) {
         blocklist.push(domain);
         await setBlocklist(blocklist);
@@ -115,7 +119,10 @@ async function handleMessage(message) {
 
     case "REMOVE_DOMAIN": {
       let blocklist = await getBlocklist();
-      const domain = payload.domain;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
       blocklist = blocklist.filter((d) => d !== domain);
       await setBlocklist(blocklist);
       // If domain is currently unlocked, clean up allow rule and alarm
@@ -131,14 +138,27 @@ async function handleMessage(message) {
     }
 
     case "GET_CHALLENGE": {
-      const { domain } = payload;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       pendingChallenges.set(domain, challenge);
       return { challenge: base64urlEncode(challenge) };
     }
 
     case "UNLOCK_DOMAIN": {
-      const { domain, clientDataJSON, authenticatorData, signature } = payload;
+      const { clientDataJSON, authenticatorData, signature } = payload;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
+
+      // Verify the domain is actually in the blocklist
+      const currentBlocklist = await getBlocklist();
+      if (!currentBlocklist.includes(domain)) {
+        return { error: "Domain is not in the blocklist." };
+      }
 
       // Consume the stored challenge (single-use regardless of outcome)
       const challenge = pendingChallenges.get(domain);

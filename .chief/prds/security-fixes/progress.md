@@ -59,3 +59,12 @@
   - `Number.isFinite` rejects `Infinity`, `-Infinity`, `NaN`, and non-numbers; `Number.isInteger` additionally rejects floats — both checks together cover all the required rejection cases.
   - Validation is duplicated intentionally in both the SW handler and `updateSettings()` to ensure the constraint is enforced regardless of call site.
 ---
+
+## 2026-02-28 - US-006
+- **What was implemented**: Fixed TOCTOU race in allow-rule ID generation in `lib/blocker.js`. `unlockDomain()` is now serialised via a module-level promise chain (mutex pattern) so concurrent calls cannot read the same existing-rules state, compute the same `nextId`, and collide on `updateDynamicRules`. Errors from `updateDynamicRules` propagate to the caller (the service worker `UNLOCK_DOMAIN` handler) which returns them to the client.
+- **Files changed**:
+  - `lib/blocker.js` — changed `unlockDomain` from `async function` to a regular function that chains onto `_allowRuleQueue`; the chain is advanced with `.catch(() => {})` so one failure cannot stall subsequent calls, while the original promise still rejects for the caller.
+- **Learnings for future iterations:**
+  - Standard promise-chain mutex pattern: `queue = queue.then(work); queue = queue.catch(() => {})` — the second line keeps the queue alive after errors; `result` (before the catch) is what you return to callers so they still see failures.
+  - The error is already propagated to callers correctly: `service-worker.js` wraps `handleMessage` in `.catch((err) => sendResponse({ error: err.message }))`, so any thrown error from `unlockDomain` automatically surfaces as `{ error: ... }` to the blocked page.
+---

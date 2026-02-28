@@ -57,6 +57,10 @@ focus-guard/
     └── cbor.js            # CBOR decoder for WebAuthn attestation
 ```
 
+## Acknowledgements
+
+This project was prototyped using [Chief](https://github.com/MiniCodeMonkey/chief), a TUI tool that automates coding projects by breaking them into tasks and running Claude Code in a loop until they're done — inspired by the Ralph Wiggum loop pattern.
+
 ## License
 
 MIT

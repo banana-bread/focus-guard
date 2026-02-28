@@ -2,6 +2,7 @@ import {
   getBlocklist,
   setBlocklist,
   getCredential,
+  setCredential,
   clearCredential,
   getUnlocks,
   setUnlock,
@@ -10,6 +11,11 @@ import {
   updateSettings,
 } from "./lib/storage.js";
 import { syncBlockRules, unlockDomain, relockDomain } from "./lib/blocker.js";
+import { verifyAssertionData, base64urlDecode, base64urlEncode } from "./lib/webauthn.js";
+
+// In-memory store for pending WebAuthn challenges, keyed by domain.
+// Challenges are single-use and consumed on first verification attempt.
+const pendingChallenges = new Map();
 
 const DEFAULT_BLOCKLIST = [
   "reddit.com",
@@ -124,8 +130,42 @@ async function handleMessage(message) {
       return { blocklist };
     }
 
+    case "GET_CHALLENGE": {
+      const { domain } = payload;
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      pendingChallenges.set(domain, challenge);
+      return { challenge: base64urlEncode(challenge) };
+    }
+
     case "UNLOCK_DOMAIN": {
-      const domain = payload.domain;
+      const { domain, clientDataJSON, authenticatorData, signature } = payload;
+
+      // Consume the stored challenge (single-use regardless of outcome)
+      const challenge = pendingChallenges.get(domain);
+      pendingChallenges.delete(domain);
+      if (!challenge) {
+        return { error: "No pending challenge for this domain. Request a challenge first." };
+      }
+
+      // Verify the WebAuthn assertion in the service worker
+      const credentialData = await getCredential();
+      if (!credentialData) {
+        return { error: "No credential registered." };
+      }
+
+      const { newSignCount } = await verifyAssertionData(
+        {
+          authenticatorData: base64urlDecode(authenticatorData),
+          clientDataJSON: base64urlDecode(clientDataJSON),
+          signature: base64urlDecode(signature),
+        },
+        challenge,
+        credentialData
+      );
+
+      // Update the stored sign count after successful verification
+      await setCredential({ ...credentialData, signCount: newSignCount });
+
       const settings = await getSettings();
       const duration = settings.unlockDurationMinutes;
 

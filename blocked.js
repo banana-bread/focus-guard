@@ -1,4 +1,4 @@
-import { verifyWithCredential } from './lib/webauthn.js';
+import { base64urlDecode, base64urlEncode } from './lib/webauthn.js';
 
 const params = new URLSearchParams(window.location.search);
 const domain = params.get('domain');
@@ -28,16 +28,57 @@ unlockBtn.addEventListener('click', async () => {
   statusMsg.textContent = '';
 
   try {
-    await verifyWithCredential();
+    // Fetch current state to get the registered credential
+    const state = await new Promise((resolve) =>
+      chrome.runtime.sendMessage({ type: 'GET_STATE' }, resolve)
+    );
+    if (!state || !state.credential) {
+      throw new Error('No credential registered');
+    }
 
-    // Send unlock request to service worker
-    const response = await chrome.runtime.sendMessage({
-      type: 'UNLOCK_DOMAIN',
-      payload: { domain },
+    // Request a single-use challenge from the service worker
+    const challengeResponse = await new Promise((resolve) =>
+      chrome.runtime.sendMessage({ type: 'GET_CHALLENGE', payload: { domain } }, resolve)
+    );
+    if (challengeResponse && challengeResponse.error) {
+      throw new Error(challengeResponse.error);
+    }
+
+    // Decode the challenge and credential ID for navigator.credentials.get()
+    const challenge = base64urlDecode(challengeResponse.challenge);
+    const credentialId = base64urlDecode(state.credential.credentialId);
+
+    // Prompt the hardware key — this is the only place navigator.credentials is called
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{
+          id: credentialId,
+          type: 'public-key',
+          transports: state.credential.transports,
+        }],
+        userVerification: 'discouraged',
+        timeout: 60000,
+      },
     });
 
-    if (response && response.error) {
-      throw new Error(response.error);
+    const assertionResponse = assertion.response;
+
+    // Forward the raw assertion bytes to the service worker for server-side verification
+    const unlockResponse = await new Promise((resolve) =>
+      chrome.runtime.sendMessage({
+        type: 'UNLOCK_DOMAIN',
+        payload: {
+          domain,
+          clientDataJSON: base64urlEncode(new Uint8Array(assertionResponse.clientDataJSON)),
+          authenticatorData: base64urlEncode(new Uint8Array(assertionResponse.authenticatorData)),
+          signature: base64urlEncode(new Uint8Array(assertionResponse.signature)),
+        },
+      }, resolve)
+    );
+
+    if (unlockResponse && unlockResponse.error) {
+      throw new Error(unlockResponse.error);
     }
 
     // Redirect to the unlocked site

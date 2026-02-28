@@ -13,9 +13,17 @@ if (domain) {
   domainDisplay.textContent = 'Unknown site';
 }
 
-// Enable unlock button only if a credential is registered
+// Verify the domain is actually in the blocklist and a credential is registered.
+// If not blocked, hide the unlock button and show an error — prevents the open-redirect
+// attack where an attacker crafts a blocked.html?domain=evil.com URL.
 chrome.runtime.sendMessage({ type: 'GET_STATE' }, (response) => {
-  if (response && response.credential) {
+  if (!domain || !response || !response.blocklist || !response.blocklist.includes(domain)) {
+    unlockBtn.style.display = 'none';
+    statusMsg.className = 'status error';
+    statusMsg.textContent = 'This domain is not blocked.';
+    return;
+  }
+  if (response.credential) {
     unlockBtn.disabled = false;
   }
 });

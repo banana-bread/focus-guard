@@ -30,3 +30,13 @@
   - AAGUID `00000000-0000-0000-0000-000000000000` is commonly used by virtual/software authenticators (e.g. Touch ID, Windows Hello) and authenticators that opt out of attestation — it will correctly be rejected by the allowlist.
   - The allowlist is exported so it can be imported and checked from tests or other modules if needed in the future.
 ---
+
+## 2026-02-28 - US-003
+- **What was implemented**: Added server-side domain validation in the service worker. `normalizeDomain()` is now imported and called on every inbound `payload.domain` in `ADD_DOMAIN`, `REMOVE_DOMAIN`, `GET_CHALLENGE`, and `UNLOCK_DOMAIN` handlers. `UNLOCK_DOMAIN` additionally verifies the (normalized) domain is present in the blocklist before proceeding.
+- **Files changed**:
+  - `service-worker.js` — imported `normalizeDomain` from `lib/normalize.js`; added normalization + null-check guard at the top of each relevant `case`; added blocklist membership check in `UNLOCK_DOMAIN`.
+- **Learnings for future iterations:**
+  - `normalizeDomain` already lowercases, strips www/protocol/port/path — calling it in the SW means both popup and SW agree on the canonical form, so `blocklist.includes(domain)` comparisons stay consistent.
+  - The blocklist check in `UNLOCK_DOMAIN` must come after normalization so the comparison is apples-to-apples (stored domains are also normalized).
+  - `GET_CHALLENGE` also needed normalization so the pendingChallenges Map key matches the key used later in `UNLOCK_DOMAIN`.
+---

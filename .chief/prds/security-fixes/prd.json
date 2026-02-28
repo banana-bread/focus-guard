@@ -44,7 +44,8 @@
         "Existing popup-side normalization is kept as a UX convenience but is no longer the sole line of defence."
       ],
       "priority": 3,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-004",

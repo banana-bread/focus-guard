@@ -111,7 +111,8 @@
         "Internal errors are still logged via `console.error` for developer debugging, but not forwarded to the caller."
       ],
       "priority": 8,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-009",

@@ -78,3 +78,13 @@
   - The service worker's `UNLOCK_DOMAIN` handler already validates blocklist membership (from US-003), providing a second line of defence.
   - Using `GET_STATE` (already called for credential check) avoids adding a new `CHECK_DOMAIN` message type — combining the two checks into one round-trip keeps the code minimal.
 ---
+
+## 2026-02-28 - US-008
+- **What was implemented**: Sanitized error messages returned from the service worker. The top-level `.catch` now logs the raw error via `console.error` and returns the fixed string `"An internal error occurred."` to callers instead of `err.message`, preventing internal implementation details from being leaked.
+- **Files changed**:
+  - `service-worker.js` — changed catch block from `sendResponse({ error: err.message })` to log via `console.error` and `sendResponse({ error: "An internal error occurred." })`.
+- **Learnings for future iterations:**
+  - User-actionable errors (domain not in blocklist, invalid domain, no pending challenge, etc.) are returned as explicit `{ error: "..." }` return values inside `handleMessage` — these are safe, intentional messages and are unaffected.
+  - Only unhandled/unexpected thrown errors (from deep storage or crypto calls) hit the `.catch` and are now genericised.
+  - The pattern is: known-error → return `{ error: safeMessage }` inside the switch; unknown-error → let it throw to the catch which logs + returns generic string.
+---

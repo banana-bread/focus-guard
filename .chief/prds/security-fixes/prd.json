@@ -137,7 +137,8 @@
         "The change does not affect domains without trailing dots."
       ],
       "priority": 10,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     }
   ]
 }

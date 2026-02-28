@@ -89,6 +89,15 @@
   - The pattern is: known-error → return `{ error: safeMessage }` inside the switch; unknown-error → let it throw to the catch which logs + returns generic string.
 ---
 
+## 2026-02-28 - US-010
+- **What was implemented**: Added trailing-dot stripping in `normalizeDomain()` so domains entered with DNS-style trailing dots (e.g. `foo.com.`) normalise correctly to `foo.com`, ensuring blocking and matching rules work as expected.
+- **Files changed**:
+  - `lib/normalize.js` — added `domain.replace(/\.+$/, "")` after the special-char strip and before the dot-presence validation.
+- **Learnings for future iterations:**
+  - The trailing-dot strip must come *before* the `!domain.includes(".")` validation; otherwise `foo.com.` after stripping the trailing dot would still pass, but if the dot is stripped *inside* the validation it would incorrectly fail.
+  - Regex `/\.+$/` handles multiple consecutive trailing dots (e.g. `foo.com..`) in one pass.
+---
+
 ## 2026-02-28 - US-009
 - **What was implemented**: Added a sign counter reset anomaly check in `verifyAssertionData`. If the stored `signCount` is non-zero and the authenticator returns `0`, verification now throws an error advising the user to re-register their key, instead of silently accepting it.
 - **Files changed**:

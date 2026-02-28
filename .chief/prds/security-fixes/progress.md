@@ -88,3 +88,12 @@
   - Only unhandled/unexpected thrown errors (from deep storage or crypto calls) hit the `.catch` and are now genericised.
   - The pattern is: known-error → return `{ error: safeMessage }` inside the switch; unknown-error → let it throw to the catch which logs + returns generic string.
 ---
+
+## 2026-02-28 - US-009
+- **What was implemented**: Added a sign counter reset anomaly check in `verifyAssertionData`. If the stored `signCount` is non-zero and the authenticator returns `0`, verification now throws an error advising the user to re-register their key, instead of silently accepting it.
+- **Files changed**:
+  - `lib/webauthn.js` — added early check before the existing monotonicity check: `if (credentialData.signCount !== 0 && newSignCount === 0)` → throws error with clear message about cloning/reset and re-registration advice.
+- **Learnings for future iterations:**
+  - The existing check `if (newSignCount !== 0 && newSignCount <= credentialData.signCount)` intentionally skips the case where `newSignCount === 0` (some authenticators don't implement counters and always return 0). The new check only triggers when the *stored* count is non-zero (i.e. the authenticator previously incremented) but now reports 0 — a genuine anomaly.
+  - Two separate `if` blocks are cleaner than combining with `||` because each case has a different meaning and could warrant a different message.
+---

@@ -124,7 +124,8 @@
         "The existing check for `newSignCount \u003c= credentialData.signCount` (non-zero case) is preserved."
       ],
       "priority": 9,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-010",

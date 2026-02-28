@@ -216,7 +216,16 @@ async function handleMessage(message) {
     }
 
     case "UPDATE_SETTINGS": {
-      await updateSettings(payload);
+      const { unlockDurationMinutes } = payload;
+      if (
+        !Number.isFinite(unlockDurationMinutes) ||
+        !Number.isInteger(unlockDurationMinutes) ||
+        unlockDurationMinutes < 1 ||
+        unlockDurationMinutes > 1440
+      ) {
+        return { error: "unlockDurationMinutes must be an integer between 1 and 1440." };
+      }
+      await updateSettings({ unlockDurationMinutes });
       const settings = await getSettings();
       return { settings };
     }

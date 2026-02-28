@@ -19,17 +19,17 @@ No data leaves the browser. There are no external dependencies, no network reque
 flowchart TD
     A([Start Registration]) --> L1
 
-    L1["Layer 1 — authenticatorAttachment: cross-platform\nBlocks Touch ID, Windows Hello, and all\nplatform (built-in) authenticators at the\nbrowser API level"]
+    L1["Layer 1 — authenticatorAttachment: cross-platform<br/>Blocks Touch ID, Windows Hello, and all<br/>platform (built-in) authenticators at the<br/>browser API level"]
     L1 --> L2
 
-    L2["Layer 2 — hints: security-key\nChrome 129+ UI hint that filters the\nauthenticator picker to show only\nexternal security keys"]
+    L2["Layer 2 — hints: security-key<br/>Chrome 129+ UI hint that filters the<br/>authenticator picker to show only<br/>external security keys"]
     L2 --> UserTouch["User touches physical key"]
 
-    UserTouch --> L3{"Layer 3 — Transport check\ngetTransports() must not include\nhybrid or internal"}
+    UserTouch --> L3{"Layer 3 — Transport check<br/>getTransports() must not include<br/>hybrid or internal"}
     L3 -- "hybrid or internal present" --> FAIL1["throw: Non-hardware key detected"]
-    L3 -- "only usb / nfc / ble\nor empty (older key)" --> L4
+    L3 -- "only usb / nfc / ble<br/>or empty (older key)" --> L4
 
-    L4["Layer 4 — Attestation + AAGUID extraction\nDirect attestation requested;\nAAGUID extracted from authData bytes 37–52\nvia CBOR decode; stored for audit"]
+    L4["Layer 4 — Attestation + AAGUID extraction<br/>Direct attestation requested;<br/>AAGUID extracted from authData bytes 37–52<br/>via CBOR decode; stored for audit"]
     L4 --> STORE["Store credential in chrome.storage.local"]
 ```
 
@@ -92,11 +92,11 @@ WebAuthn authenticators return ECDSA signatures in DER (ASN.1) encoding. The Web
 
 ```mermaid
 flowchart LR
-    A["DER bytes\n0x30 len 0x02 rLen r 0x02 sLen s"] --> B["Skip SEQUENCE tag + length\n(handle multi-byte length)"]
-    B --> C["Parse r: skip 0x02 tag,\nread rLen, slice r bytes"]
-    C --> D["Parse s: skip 0x02 tag,\nread sLen, slice s bytes"]
+    A["DER bytes<br/>0x30 len 0x02 rLen r 0x02 sLen s"] --> B["Skip SEQUENCE tag + length<br/>(handle multi-byte length)"]
+    B --> C["Parse r: skip 0x02 tag,<br/>read rLen, slice r bytes"]
+    C --> D["Parse s: skip 0x02 tag,<br/>read sLen, slice s bytes"]
     D --> E["Allocate 64-byte output"]
-    E --> F["Right-align r into bytes 0–31\n(strip leading 0x00 or zero-pad)"]
+    E --> F["Right-align r into bytes 0–31<br/>(strip leading 0x00 or zero-pad)"]
     F --> G["Right-align s into bytes 32–63"]
     G --> H["Return 64-byte Uint8Array"]
 ```
@@ -112,12 +112,12 @@ Chrome's `declarativeNetRequest` API matches rules by priority. Focus Guard uses
 ```mermaid
 graph LR
     subgraph "Block State (domain blocked)"
-        BR["Block Rule\nID: 1–9999\nPriority: 1\nAction: redirect → blocked.html"]
+        BR["Block Rule<br/>ID: 1–9999<br/>Priority: 1<br/>Action: redirect → blocked.html"]
     end
 
     subgraph "Unlock State (domain temporarily allowed)"
-        AR["Allow Rule\nID: 10001–19999\nPriority: 2\nAction: allow"]
-        BR2["Block Rule\nID: 1–9999\nPriority: 1\nAction: redirect → blocked.html\n(still present)"]
+        AR["Allow Rule<br/>ID: 10001–19999<br/>Priority: 2<br/>Action: allow"]
+        BR2["Block Rule<br/>ID: 1–9999<br/>Priority: 1<br/>Action: redirect → blocked.html<br/>(still present)"]
         AR -- "overrides (higher priority)" --> BR2
     end
 ```

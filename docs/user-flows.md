@@ -96,12 +96,12 @@ The user clicks **Register Security Key** in the popup. The browser's WebAuthn A
 
 ```mermaid
 flowchart TD
-    A[navigator.credentials.create] --> B{Layer 1:\nauthenticatorAttachment\n= cross-platform?}
-    B -- "enforced in options" --> C{Layer 2:\nhints: security-key\n(Chrome 129+ UI)}
+    A[navigator.credentials.create] --> B{Layer 1:<br/>authenticatorAttachment<br/>= cross-platform?}
+    B -- "enforced in options" --> C{Layer 2:<br/>hints: security-key<br/>(Chrome 129+ UI)}
     C --> D[User touches key]
-    D --> E{Layer 3:\ngetTransports() check\nhybrid/internal rejected?}
+    D --> E{Layer 3:<br/>getTransports() check<br/>hybrid/internal rejected?}
     E -- "has hybrid or internal" --> F[throw Error: Non-hardware key detected]
-    E -- "only usb/nfc/ble or empty" --> G{Layer 4:\nAAGUID extracted\nfrom attestation}
+    E -- "only usb/nfc/ble or empty" --> G{Layer 4:<br/>AAGUID extracted<br/>from attestation}
     G --> H[Store credential in storage.js]
     H --> I[Return credentialData to popup.js]
 ```

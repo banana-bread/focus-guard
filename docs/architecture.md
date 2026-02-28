@@ -13,14 +13,14 @@ The extension runs across three independent JavaScript contexts. Each has differ
 ```mermaid
 graph TD
     subgraph Browser
-        SW["service-worker.js\n(background)"]
-        POP["popup.html / popup.js\n(extension popup)"]
-        BLK["blocked.html / blocked.js\n(blocked page)"]
+        SW["service-worker.js<br/>(background)"]
+        POP["popup.html / popup.js<br/>(extension popup)"]
+        BLK["blocked.html / blocked.js<br/>(blocked page)"]
     end
 
     subgraph Storage
         CS["chrome.storage.local"]
-        DNR["declarativeNetRequest\n(dynamic rules)"]
+        DNR["declarativeNetRequest<br/>(dynamic rules)"]
         ALM["chrome.alarms"]
     end
 

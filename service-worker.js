@@ -81,7 +81,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message).then(sendResponse).catch((err) => {
-    sendResponse({ error: err.message });
+    console.error("Focus Guard: message handler error:", err);
+    sendResponse({ error: "An internal error occurred." });
   });
   return true; // Keep message channel open for async response
 });

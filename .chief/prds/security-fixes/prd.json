@@ -84,7 +84,8 @@
         "If `updateDynamicRules` fails for any reason the error is propagated to the service worker message handler and returned to the caller rather than swallowed."
       ],
       "priority": 6,
-      "passes": false
+      "passes": false,
+      "inProgress": true
     },
     {
       "id": "US-007",

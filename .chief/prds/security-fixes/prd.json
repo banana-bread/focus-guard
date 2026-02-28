@@ -58,7 +58,8 @@
         "Existing tests (manual or automated) confirm that 0, -1, `Infinity`, `\"string\"`, and extra keys are all rejected."
       ],
       "priority": 4,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-005",

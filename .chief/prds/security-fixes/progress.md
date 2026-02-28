@@ -40,3 +40,13 @@
   - The blocklist check in `UNLOCK_DOMAIN` must come after normalization so the comparison is apples-to-apples (stored domains are also normalized).
   - `GET_CHALLENGE` also needed normalization so the pendingChallenges Map key matches the key used later in `UNLOCK_DOMAIN`.
 ---
+
+## 2026-02-28 - US-004
+- **What was implemented**: Added strict validation for `UPDATE_SETTINGS` payload. The handler now extracts only `unlockDurationMinutes`, validates it as a finite integer in [1, 1440], and returns an error for any invalid value. `updateSettings()` in `lib/storage.js` enforces the same constraint so the check cannot be bypassed by calling storage directly.
+- **Files changed**:
+  - `service-worker.js` — `UPDATE_SETTINGS` case now destructures only `unlockDurationMinutes`, validates it with `Number.isFinite` + `Number.isInteger` + range check, returns `{ error }` on failure, and passes only `{ unlockDurationMinutes }` to `updateSettings()`.
+  - `lib/storage.js` — `updateSettings()` validates `unlockDurationMinutes` and throws on invalid input; merges only that key (not arbitrary spread) into stored settings.
+- **Learnings for future iterations:**
+  - `Number.isFinite` rejects `Infinity`, `-Infinity`, `NaN`, and non-numbers; `Number.isInteger` additionally rejects floats — both checks together cover all the required rejection cases.
+  - Validation is duplicated intentionally in both the SW handler and `updateSettings()` to ensure the constraint is enforced regardless of call site.
+---

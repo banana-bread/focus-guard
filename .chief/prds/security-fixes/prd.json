@@ -98,7 +98,8 @@
         "`web_accessible_resources` in `manifest.json` is restricted to `matches: [\"\u003call_urls\u003e\"]` only if technically required; otherwise scope it to the extension's own pages."
       ],
       "priority": 7,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-008",

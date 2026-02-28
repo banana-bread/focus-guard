@@ -68,3 +68,13 @@
   - Standard promise-chain mutex pattern: `queue = queue.then(work); queue = queue.catch(() => {})` — the second line keeps the queue alive after errors; `result` (before the catch) is what you return to callers so they still see failures.
   - The error is already propagated to callers correctly: `service-worker.js` wraps `handleMessage` in `.catch((err) => sendResponse({ error: err.message }))`, so any thrown error from `unlockDomain` automatically surfaces as `{ error: ... }` to the blocked page.
 ---
+
+## 2026-02-28 - US-007
+- **What was implemented**: Added blocklist validation in `blocked.js` before rendering the unlock UI. By reusing the existing `GET_STATE` message, the page now checks whether the `?domain=` query parameter is actually in the blocklist before enabling the unlock button. If not, the button is hidden and "This domain is not blocked." is displayed — preventing an open-redirect attack where a crafted `blocked.html?domain=evil.com` URL could trick the user into authenticating with their hardware key.
+- **Files changed**:
+  - `blocked.js` — expanded the initial `GET_STATE` callback to check `response.blocklist.includes(domain)`; on mismatch, hides the unlock button (`style.display = 'none'`) and shows an error message; returns early so the credential check is skipped.
+- **Learnings for future iterations:**
+  - `web_accessible_resources` with `matches: ["<all_urls>"]` is technically required because `declarativeNetRequest` redirect rules need to redirect arbitrary blocked URLs to `blocked.html`. No restriction is possible without breaking the core feature.
+  - The service worker's `UNLOCK_DOMAIN` handler already validates blocklist membership (from US-003), providing a second line of defence.
+  - Using `GET_STATE` (already called for credential check) avoids adding a new `CHECK_DOMAIN` message type — combining the two checks into one round-trip keeps the code minimal.
+---

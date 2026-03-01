@@ -2,6 +2,7 @@ import {
   getBlocklist,
   setBlocklist,
   getCredential,
+  setCredential,
   clearCredential,
   getUnlocks,
   setUnlock,
@@ -10,6 +11,14 @@ import {
   updateSettings,
 } from "./lib/storage.js";
 import { syncBlockRules, unlockDomain, relockDomain } from "./lib/blocker.js";
+import { verifyAssertionData, base64urlDecode, base64urlEncode } from "./lib/webauthn.js";
+import { normalizeDomain } from "./lib/normalize.js";
+
+// In-memory store for pending WebAuthn challenges, keyed by domain.
+// Each entry is { bytes: Uint8Array, issuedAt: number }.
+// Challenges are single-use and expire after CHALLENGE_TTL_MS.
+const pendingChallenges = new Map();
+const CHALLENGE_TTL_MS = 120_000; // 2 minutes
 
 const DEFAULT_BLOCKLIST = [
   "reddit.com",
@@ -74,7 +83,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message).then(sendResponse).catch((err) => {
-    sendResponse({ error: err.message });
+    console.error("Focus Guard: message handler error:", err);
+    sendResponse({ error: "An internal error occurred." });
   });
   return true; // Keep message channel open for async response
 });
@@ -90,7 +100,10 @@ async function handleMessage(message) {
 
     case "ADD_DOMAIN": {
       const blocklist = await getBlocklist();
-      const domain = payload.domain;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
       if (!blocklist.includes(domain)) {
         blocklist.push(domain);
         await setBlocklist(blocklist);
@@ -109,7 +122,10 @@ async function handleMessage(message) {
 
     case "REMOVE_DOMAIN": {
       let blocklist = await getBlocklist();
-      const domain = payload.domain;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
       blocklist = blocklist.filter((d) => d !== domain);
       await setBlocklist(blocklist);
       // If domain is currently unlocked, clean up allow rule and alarm
@@ -124,15 +140,76 @@ async function handleMessage(message) {
       return { blocklist };
     }
 
+    case "GET_CHALLENGE": {
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
+      const blocklist = await getBlocklist();
+      if (!blocklist.includes(domain)) {
+        return { error: "Domain is not in the blocklist." };
+      }
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      pendingChallenges.set(domain, { bytes: challenge, issuedAt: Date.now() });
+      return { challenge: base64urlEncode(challenge) };
+    }
+
     case "UNLOCK_DOMAIN": {
-      const domain = payload.domain;
+      const { clientDataJSON, authenticatorData, signature } = payload;
+      const domain = normalizeDomain(payload.domain);
+      if (!domain) {
+        return { error: "Invalid domain." };
+      }
+
+      // Verify the domain is actually in the blocklist
+      const currentBlocklist = await getBlocklist();
+      if (!currentBlocklist.includes(domain)) {
+        return { error: "Domain is not in the blocklist." };
+      }
+
+      // Consume the stored challenge (single-use regardless of outcome)
+      const stored = pendingChallenges.get(domain);
+      pendingChallenges.delete(domain);
+      if (!stored) {
+        return { error: "No pending challenge for this domain. Request a challenge first." };
+      }
+      if (Date.now() - stored.issuedAt > CHALLENGE_TTL_MS) {
+        return { error: "Challenge expired. Please try again." };
+      }
+      const challenge = stored.bytes;
+
+      // Verify the WebAuthn assertion in the service worker
+      const credentialData = await getCredential();
+      if (!credentialData) {
+        return { error: "No credential registered." };
+      }
+
+      let newSignCount;
+      try {
+        ({ newSignCount } = await verifyAssertionData(
+          {
+            authenticatorData: base64urlDecode(authenticatorData),
+            clientDataJSON: base64urlDecode(clientDataJSON),
+            signature: base64urlDecode(signature),
+          },
+          challenge,
+          credentialData
+        ));
+      } catch (err) {
+        return { error: err.message };
+      }
+
+      // Update the stored sign count after successful verification
+      await setCredential({ ...credentialData, signCount: newSignCount });
+
       const settings = await getSettings();
       const duration = settings.unlockDurationMinutes;
 
       await unlockDomain(domain);
+      const now = Date.now();
       await setUnlock(domain, {
-        unlockedAt: Date.now(),
-        expiresAt: Date.now() + duration * 60 * 1000,
+        unlockedAt: now,
+        expiresAt: now + duration * 60 * 1000,
       });
 
       await chrome.alarms.create(`relock:${domain}`, {
@@ -156,7 +233,16 @@ async function handleMessage(message) {
     }
 
     case "UPDATE_SETTINGS": {
-      await updateSettings(payload);
+      const { unlockDurationMinutes } = payload;
+      if (
+        !Number.isFinite(unlockDurationMinutes) ||
+        !Number.isInteger(unlockDurationMinutes) ||
+        unlockDurationMinutes < 1 ||
+        unlockDurationMinutes > 1440
+      ) {
+        return { error: "unlockDurationMinutes must be an integer between 1 and 1440." };
+      }
+      await updateSettings({ unlockDurationMinutes });
       const settings = await getSettings();
       return { settings };
     }

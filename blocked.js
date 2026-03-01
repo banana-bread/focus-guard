@@ -1,4 +1,5 @@
 import { base64urlDecode, base64urlEncode } from './lib/webauthn.js';
+import { normalizeDomain } from './lib/normalize.js';
 
 const params = new URLSearchParams(window.location.search);
 const domain = params.get('domain');
@@ -16,8 +17,10 @@ if (domain) {
 // Verify the domain is actually in the blocklist and a credential is registered.
 // If not blocked, hide the unlock button and show an error — prevents the open-redirect
 // attack where an attacker crafts a blocked.html?domain=evil.com URL.
+// Normalize the URL param before comparing against the stored (normalized) blocklist.
 chrome.runtime.sendMessage({ type: 'GET_STATE' }, (response) => {
-  if (!domain || !response || !response.blocklist || !response.blocklist.includes(domain)) {
+  const normalizedDomain = domain ? normalizeDomain(domain) : null;
+  if (!normalizedDomain || !response || !response.blocklist || !response.blocklist.includes(normalizedDomain)) {
     unlockBtn.style.display = 'none';
     statusMsg.className = 'status error';
     statusMsg.textContent = 'This domain is not blocked.';

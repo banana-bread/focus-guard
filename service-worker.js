@@ -15,8 +15,10 @@ import { verifyAssertionData, base64urlDecode, base64urlEncode } from "./lib/web
 import { normalizeDomain } from "./lib/normalize.js";
 
 // In-memory store for pending WebAuthn challenges, keyed by domain.
-// Challenges are single-use and consumed on first verification attempt.
+// Each entry is { bytes: Uint8Array, issuedAt: number }.
+// Challenges are single-use and expire after CHALLENGE_TTL_MS.
 const pendingChallenges = new Map();
+const CHALLENGE_TTL_MS = 120_000; // 2 minutes
 
 const DEFAULT_BLOCKLIST = [
   "reddit.com",
@@ -143,8 +145,12 @@ async function handleMessage(message) {
       if (!domain) {
         return { error: "Invalid domain." };
       }
+      const blocklist = await getBlocklist();
+      if (!blocklist.includes(domain)) {
+        return { error: "Domain is not in the blocklist." };
+      }
       const challenge = crypto.getRandomValues(new Uint8Array(32));
-      pendingChallenges.set(domain, challenge);
+      pendingChallenges.set(domain, { bytes: challenge, issuedAt: Date.now() });
       return { challenge: base64urlEncode(challenge) };
     }
 
@@ -162,11 +168,15 @@ async function handleMessage(message) {
       }
 
       // Consume the stored challenge (single-use regardless of outcome)
-      const challenge = pendingChallenges.get(domain);
+      const stored = pendingChallenges.get(domain);
       pendingChallenges.delete(domain);
-      if (!challenge) {
+      if (!stored) {
         return { error: "No pending challenge for this domain. Request a challenge first." };
       }
+      if (Date.now() - stored.issuedAt > CHALLENGE_TTL_MS) {
+        return { error: "Challenge expired. Please try again." };
+      }
+      const challenge = stored.bytes;
 
       // Verify the WebAuthn assertion in the service worker
       const credentialData = await getCredential();
@@ -174,15 +184,20 @@ async function handleMessage(message) {
         return { error: "No credential registered." };
       }
 
-      const { newSignCount } = await verifyAssertionData(
-        {
-          authenticatorData: base64urlDecode(authenticatorData),
-          clientDataJSON: base64urlDecode(clientDataJSON),
-          signature: base64urlDecode(signature),
-        },
-        challenge,
-        credentialData
-      );
+      let newSignCount;
+      try {
+        ({ newSignCount } = await verifyAssertionData(
+          {
+            authenticatorData: base64urlDecode(authenticatorData),
+            clientDataJSON: base64urlDecode(clientDataJSON),
+            signature: base64urlDecode(signature),
+          },
+          challenge,
+          credentialData
+        ));
+      } catch (err) {
+        return { error: err.message };
+      }
 
       // Update the stored sign count after successful verification
       await setCredential({ ...credentialData, signCount: newSignCount });
@@ -191,9 +206,10 @@ async function handleMessage(message) {
       const duration = settings.unlockDurationMinutes;
 
       await unlockDomain(domain);
+      const now = Date.now();
       await setUnlock(domain, {
-        unlockedAt: Date.now(),
-        expiresAt: Date.now() + duration * 60 * 1000,
+        unlockedAt: now,
+        expiresAt: now + duration * 60 * 1000,
       });
 
       await chrome.alarms.create(`relock:${domain}`, {

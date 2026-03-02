@@ -1,0 +1,184 @@
+{
+  "project": "Automated Testing",
+  "description": "Add a comprehensive unit and user-flow test suite to Focus Guard using Vitest. All external systems (Chrome extension APIs, WebAuthn/navigator.credentials, DOM) are mocked. No integration tests. Includes a GitHub Actions CI workflow to run tests on every push and pull request.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Test infrastructure setup",
+      "description": "As a developer, I want a Vitest configuration and shared Chrome API mock utilities so that all other test stories have a consistent foundation to build on.",
+      "acceptanceCriteria": [
+        "`vitest` is added as a dev dependency (via `package.json`)",
+        "`vitest.config.js` is created at the project root with `environment: 'jsdom'` and an alias so `import ... from 'lib/...'` resolves correctly",
+        "A shared mock helper (e.g. `tests/helpers/chrome-mock.js`) exports a `setupChromeMock()` function that stubs the full `chrome` global: `chrome.storage.local`, `chrome.runtime`, `chrome.declarativeNetRequest`, `chrome.alarms`, and `chrome.tabs`",
+        "`npm test` runs the full suite successfully",
+        "A `tests/` directory structure is established: `tests/unit/` for lib tests, `tests/flows/` for user flow tests"
+      ],
+      "priority": 1,
+      "passes": true,
+      "inProgress": false
+    },
+    {
+      "id": "US-002",
+      "title": "normalize.js unit tests",
+      "description": "As a developer, I want unit tests for `lib/normalize.js` so that domain normalization edge cases are reliably verified.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/normalize.test.js`",
+        "Covers: stripping `https://`, `http://`, `www.`, ports, and paths",
+        "Covers: trailing dots are stripped",
+        "Covers: already-normalized input is returned unchanged",
+        "Covers: mixed-case input is lowercased",
+        "All tests pass"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "US-003",
+      "title": "cbor.js unit tests",
+      "description": "As a developer, I want unit tests for `lib/cbor.js` so that CBOR decoding correctness is verified with known byte sequences.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/cbor.test.js`",
+        "Covers: decoding a known CBOR map (e.g. a minimal authenticator data structure)",
+        "Covers: decoding nested CBOR structures",
+        "Covers: decoding a CBOR byte string and text string",
+        "Covers: error thrown on malformed / truncated CBOR input",
+        "All tests pass"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "US-004",
+      "title": "storage.js unit tests",
+      "description": "As a developer, I want unit tests for `lib/storage.js` so that all storage read/write operations are verified against a mocked `chrome.storage.local`.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/storage.test.js`",
+        "`chrome.storage.local` is mocked via the shared helper from US-001",
+        "Covers: reading blocklist, credential, unlocks, and settings",
+        "Covers: writing/updating each storage key",
+        "Covers: default values are returned when storage is empty",
+        "All tests pass"
+      ],
+      "priority": 4,
+      "passes": false
+    },
+    {
+      "id": "US-005",
+      "title": "blocker.js unit tests",
+      "description": "As a developer, I want unit tests for `lib/blocker.js` so that declarativeNetRequest rule creation and removal are verified without touching the real Chrome API.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/blocker.test.js`",
+        "`chrome.declarativeNetRequest` is mocked via the shared helper",
+        "Covers: adding a block rule creates the correct rule object and calls `updateDynamicRules`",
+        "Covers: adding an allow (unlock) rule creates the correct rule object",
+        "Covers: removing a block rule calls `updateDynamicRules` with the correct `removeRuleIds`",
+        "Covers: removing an allow rule calls `updateDynamicRules` with the correct `removeRuleIds`",
+        "Covers: listing existing rules returns the mocked rule set",
+        "All tests pass"
+      ],
+      "priority": 5,
+      "passes": false
+    },
+    {
+      "id": "US-006",
+      "title": "webauthn.js unit tests",
+      "description": "As a developer, I want unit tests for `lib/webauthn.js` so that registration and verification logic is verified with a mocked `navigator.credentials` API.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/webauthn.test.js`",
+        "`navigator.credentials.create` and `navigator.credentials.get` are mocked",
+        "Covers: successful registration returns a credential object with expected shape",
+        "Covers: registration rejects if the authenticator transport is `internal` (software key)",
+        "Covers: registration rejects if AAGUID is not on the allowlist",
+        "Covers: successful verification returns `true` and updated sign count",
+        "Covers: verification rejects if sign count does not increment (clone detection)",
+        "Covers: verification rejects if signature is invalid",
+        "All tests pass"
+      ],
+      "priority": 6,
+      "passes": false
+    },
+    {
+      "id": "US-007",
+      "title": "service-worker.js unit tests",
+      "description": "As a developer, I want unit tests for `service-worker.js` message handlers and alarm logic so that the core coordination logic is verified with all Chrome APIs mocked.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/service-worker.test.js`",
+        "All chrome APIs mocked via shared helper; `lib/` imports use real implementations backed by mocked chrome APIs",
+        "Covers: `ADD_DOMAIN` message adds domain to blocklist and creates a block rule",
+        "Covers: `REMOVE_DOMAIN` message removes domain from blocklist and removes the block rule",
+        "Covers: `UNLOCK_DOMAIN` message verifies WebAuthn (mocked), adds allow rule, sets alarm",
+        "Covers: alarm firing removes the allow rule for the correct domain",
+        "Covers: `GET_STATE` message returns current blocklist, credential presence, and unlock status",
+        "All tests pass"
+      ],
+      "priority": 7,
+      "passes": false
+    },
+    {
+      "id": "US-008",
+      "title": "popup.js unit tests",
+      "description": "As a developer, I want unit tests for `popup.js` so that UI event handlers are verified against a mocked DOM and mocked `chrome.runtime.sendMessage`.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/popup.test.js`",
+        "DOM is set up via jsdom; `chrome.runtime.sendMessage` is mocked",
+        "Covers: submitting the add-domain form sends an `ADD_DOMAIN` message with the normalized domain",
+        "Covers: clicking remove on a domain entry sends a `REMOVE_DOMAIN` message",
+        "Covers: clicking register security key triggers the registration flow (mocked) and sends result to service worker",
+        "Covers: clicking remove security key sends the appropriate message",
+        "Covers: changing unlock duration sends a settings update message",
+        "Covers: on load, existing blocklist and credential state are rendered correctly",
+        "All tests pass"
+      ],
+      "priority": 8,
+      "passes": false
+    },
+    {
+      "id": "US-009",
+      "title": "blocked.js unit tests",
+      "description": "As a developer, I want unit tests for `blocked.js` so that the WebAuthn unlock button flow is verified with mocked DOM and mocked `chrome.runtime.sendMessage`.",
+      "acceptanceCriteria": [
+        "Test file at `tests/unit/blocked.test.js`",
+        "DOM is set up via jsdom; `chrome.runtime.sendMessage` and `navigator.credentials.get` are mocked",
+        "Covers: clicking the unlock button calls `navigator.credentials.get` and sends `UNLOCK_DOMAIN` on success",
+        "Covers: a failed WebAuthn assertion (mocked rejection) shows an error message in the UI",
+        "Covers: a successful unlock redirects or updates the UI as expected",
+        "All tests pass"
+      ],
+      "priority": 9,
+      "passes": false
+    },
+    {
+      "id": "US-010",
+      "title": "User flow tests",
+      "description": "As a developer, I want a suite of end-to-end user flow tests (all within a single test file) that exercise complete user journeys through the JS modules with all external services mocked, so that the most critical paths are verified holistically.",
+      "acceptanceCriteria": [
+        "Test file at `tests/flows/user-flows.test.js`",
+        "All chrome APIs and WebAuthn mocked; real `lib/` and service worker logic exercised",
+        "Flow 1 — Register a security key: user opens popup → triggers registration → credential is saved to storage with correct shape and only hardware transports",
+        "Flow 2 — Add a domain to blocklist: user submits domain in popup → normalized domain appears in blocklist in storage → block rule exists in mocked declarativeNetRequest",
+        "Flow 3 — Remove a domain from blocklist: user removes domain → domain absent from blocklist → block rule removed from declarativeNetRequest",
+        "Flow 4 — Unlock a blocked site: user on blocked page triggers WebAuthn assertion (mocked success) → service worker verifies → allow rule created → unlock record written to storage → alarm set",
+        "Flow 5 — Unlock expiry re-locks domain: alarm fires for a previously unlocked domain → allow rule removed → unlock record cleared from storage",
+        "Flow 6 — Remove a registered security key: user removes key → credential cleared from storage → subsequent unlock attempts fail",
+        "Flow 7 — Configure unlock duration: user sets duration to 60 minutes → next unlock flow uses 60-minute expiry",
+        "All tests pass"
+      ],
+      "priority": 10,
+      "passes": false
+    },
+    {
+      "id": "US-011",
+      "title": "GitHub Actions CI",
+      "description": "As a developer, I want a GitHub Actions workflow that runs the full test suite on every push and pull request so that regressions are caught automatically.",
+      "acceptanceCriteria": [
+        "Workflow file at `.github/workflows/test.yml`",
+        "Triggers on `push` and `pull_request` for all branches",
+        "Uses Node.js LTS (22.x)",
+        "Runs `npm ci` then `npm test`",
+        "Workflow passes on a clean run of the test suite"
+      ],
+      "priority": 11,
+      "passes": false
+    }
+  ]
+}

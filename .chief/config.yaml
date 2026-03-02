@@ -1,0 +1,3 @@
+onComplete:
+  push: true
+  createPR: true

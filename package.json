@@ -1,0 +1,14 @@
+{
+  "name": "focus-guard",
+  "version": "1.0.0",
+  "description": "Chrome extension that blocks distracting websites and requires hardware security key verification",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

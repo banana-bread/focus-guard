@@ -187,7 +187,8 @@
         "Workflow passes on a clean run of the test suite"
       ],
       "priority": 11,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     }
   ]
 }

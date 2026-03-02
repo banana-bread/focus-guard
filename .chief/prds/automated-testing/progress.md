@@ -1,4 +1,24 @@
+## 2026-03-02 - US-008
+- What was implemented: 22 unit tests for `popup.js` covering all UI event handlers and DOM rendering
+- Files changed:
+  - `tests/unit/popup.test.js` (new) — tests for add-domain form (button click, Enter key, invalid domain, input clearing, list rendering), remove domain (button click, list update), register security key (registerCredential call, key-registered/unregistered state, error messages, button re-enable), remove security key (CLEAR_CREDENTIAL message, confirm cancel, state switch), unlock duration (UPDATE_SETTINGS message, numeric value, all presets), initial state rendering (blocklist render, credential display)
+  - `.chief/prds/automated-testing/prd.json` — US-008 marked passes: true
+- **Learnings for future iterations:**
+  - DOM must be set up via `document.body.innerHTML = POPUP_HTML` in `beforeAll` BEFORE dynamic import of popup.js — popup.js queries DOM elements at module load time
+  - `loadState()` is called without `await` at the bottom of popup.js — use `await new Promise(r => setTimeout(r, 0))` in beforeAll to flush the async operations
+  - `window.confirm` in jsdom returns `false` by default — use `vi.spyOn(window, 'confirm').mockReturnValue(true)` for tests that click remove-key-btn
+  - Event listeners attached at module load persist across tests — `beforeEach` should reset DOM element state (hidden flags, innerHTML, value) to ensure test isolation
+  - `setupChromeMock()` in `beforeEach` replaces `global.chrome` — popup.js references `chrome` as a global at call time (not import time), so new mock is picked up correctly
+  - `vi.clearAllMocks()` clears call history on all mocks but preserves `mockResolvedValue` — call it before setting up test-specific implementations
+  - `flushAsync()` helper (setTimeout 0) reliably flushes popup.js's async handlers in all tests
+---
+
 ## Codebase Patterns
+- service-worker.js registers event listeners at module load time — set up `global.chrome` via `setupChromeMock()` in `beforeAll` BEFORE the dynamic `import('../../service-worker.js')`, then capture handlers via `addListener.mock.calls[0][0]`
+- Dynamic import in `beforeAll` (not static import) is required for service-worker.js so that chrome mock is in place when listeners are registered
+- `vi.mock()` is hoisted; use `const { fn } = await import('lib/...')` after the `vi.mock()` call to get the mocked function reference in ESM
+- `vi.clearAllMocks()` in `beforeEach` resets call history but NOT `mockResolvedValue` implementations — safe to use for shared mocks like `verifyAssertionData`
+- `pendingChallenges` in service-worker.js is module-level state; it persists across tests but challenges are always consumed on `UNLOCK_DOMAIN`, so tests are isolated as long as each sets up its own challenge
 - In the jsdom/vitest environment, `ArrayBuffer.prototype.slice()` produces a vm-context ArrayBuffer that Node.js's `crypto.subtle.importKey` rejects. Pass a Uint8Array (TypedArray) directly instead — it is accepted as an ArrayBufferView by importKey in all environments.
 - All lib/ files use ES module `export` syntax — use `type: "module"` in package.json
 - vitest.config.js uses `resolve.alias` to map `lib/` → project root `lib/` directory
@@ -77,6 +97,20 @@
   - Build the CBOR attestation object manually: `A1 68 "authData" 58 <len> <authData bytes>` — authData bytes 37-52 hold the AAGUID
   - `buildValidAssertion` helper must compute `SHA-256(rpId)` and embed it in authData bytes 0-31; rpId = `new URL(ORIGIN).hostname`
   - `beforeAll` is the right place for expensive key generation; `beforeEach` for fresh chrome mock + navigator stub
+---
+
+## 2026-03-02 - US-007
+- What was implemented: 19 unit tests for `service-worker.js` covering ADD_DOMAIN, REMOVE_DOMAIN, UNLOCK_DOMAIN message handlers, relock alarm handler, and GET_STATE
+- Files changed:
+  - `tests/unit/service-worker.test.js` (new) — tests for all message types and alarm handler
+  - `.chief/prds/automated-testing/prd.json` — US-007 marked passes: true
+- **Learnings for future iterations:**
+  - Must set up `global.chrome` before dynamically importing service-worker.js — use `beforeAll` with `setupChromeMock()` then `await import('../../service-worker.js')`
+  - Capture listener callbacks via `addListener.mock.calls[0][0]` after the import
+  - `vi.mock('lib/webauthn.js', ...)` with `await import('lib/webauthn.js')` (top-level await) gives access to the mocked function for per-test configuration
+  - `vi.clearAllMocks()` in `beforeEach` clears call history without removing `mockResolvedValue` — safe for resetting between tests
+  - `setupUnlock()` helper: seeds storage with blocklist + credential, then calls `GET_CHALLENGE` to issue a pending challenge — covers the full UNLOCK_DOMAIN preconditions
+  - FAKE_B64 = 'AAAA' is valid base64url (decodes to 3 null bytes) — sufficient for mocked paths where `verifyAssertionData` doesn't inspect the payload
 ---
 
 ## 2026-03-02 - US-002

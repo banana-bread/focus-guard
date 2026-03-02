@@ -13,6 +13,45 @@
   - `flushAsync()` helper (setTimeout 0) reliably flushes popup.js's async handlers in all tests
 ---
 
+## 2026-03-02 - US-009
+- What was implemented: 9 unit tests for `blocked.js` covering initial page load, successful unlock flow, and all failure paths
+- Files changed:
+  - `tests/unit/blocked.test.js` (new) — tests for domain display on load, button enabled when state is valid, navigator.credentials.get called on click, UNLOCK_DOMAIN sent with assertion data, redirect on success, error display for WebAuthn failure, NotAllowedError cancellation message, button re-enabled after failure, service worker unlock error, GET_CHALLENGE error, missing credential error
+  - `.chief/prds/automated-testing/prd.json` — US-009 marked passes: true
+- **Learnings for future iterations:**
+  - blocked.js reads `window.location.search` at module load — use `Object.defineProperty(window, 'location', { configurable: true, value: { search: '?domain=...', get href() {...}, set href(val) {...} } })` in `beforeAll` BEFORE the dynamic import
+  - Intercept `window.location.href` assignments with a getter/setter to test redirect without real navigation; store the value in `lastHref` for assertions
+  - blocked.js sendMessage calls use callback style (not Promise) — mock must call the callback synchronously: `chromeMock.runtime.sendMessage.mockImplementation((msg, cb) => { if (cb) cb(response); })`
+  - `global.navigator.credentials = { get: vi.fn().mockResolvedValue(MOCK_ASSERTION) }` in `beforeEach` is sufficient to mock credentials — no need for vi.stubGlobal
+  - MOCK_ASSERTION needs `.response.clientDataJSON`, `.response.authenticatorData`, `.response.signature` as ArrayBuffers — `new Uint8Array([...]).buffer` works fine
+  - A single `await new Promise(r => setTimeout(r, 0))` (flushAsync) is sufficient to flush the entire click handler chain since all mocks are synchronous callbacks or immediately resolved Promises
+---
+
+## 2026-03-02 - US-010
+- What was implemented: 7 user flow tests in `tests/flows/user-flows.test.js` covering all 7 end-to-end user journeys
+- Files changed:
+  - `tests/flows/user-flows.test.js` (new) — Flow 1: register security key (navigator.credentials.create mocked, credential saved to storage with hardware-only transports); Flow 2: add domain (URL normalized, block rule created); Flow 3: remove domain (domain absent from blocklist, block rule removed); Flow 4: unlock blocked site (verifyAssertionData mocked, allow rule created, unlock record saved, alarm set); Flow 5: unlock expiry (alarm handler removes allow rule and clears unlock record); Flow 6: remove key (CLEAR_CREDENTIAL, subsequent unlock fails with "No credential"); Flow 7: configure duration (UPDATE_SETTINGS with 60 min, alarm uses 60 min delay, expiry is ~60 min)
+  - `.chief/prds/automated-testing/prd.json` — US-010 marked passes: true
+- **Learnings for future iterations:**
+  - Flow tests follow the same module import pattern as service-worker.test.js: `setupChromeMock()` in `beforeAll` before `import('../../service-worker.js')`, then capture handlers via `addListener.mock.calls[0][0]`
+  - `vi.mock('lib/webauthn.js', ...)` with top-level `await import('lib/webauthn.js')` for partial mock (only verifyAssertionData) keeps registerCredential as the real implementation
+  - For registerCredential tests: stub navigator via `vi.stubGlobal('navigator', { credentials: { create: vi.fn() } })` and clean up in `afterEach` with `vi.unstubAllGlobals()`
+  - `buildMockCredential()` generates a real ECDSA P-256 key pair so `importPublicKey` in registerCredential doesn't throw; use `crypto.subtle.generateKey` inside the helper
+  - For Flow 7 (settings), calling `UPDATE_SETTINGS` via sendMessage writes to the mock storage; subsequent `UNLOCK_DOMAIN` reads the updated settings correctly
+  - `seedUnlockState` helper with configurable settings parameter avoids repeating setup across flows
+---
+
+## 2026-03-02 - US-011
+- What was implemented: GitHub Actions CI workflow that runs the full test suite on every push and pull request
+- Files changed:
+  - `.github/workflows/test.yml` (new) — triggers on push/pull_request for all branches, uses Node.js 22.x, runs `npm ci` then `npm test`
+  - `.chief/prds/automated-testing/prd.json` — US-011 marked passes: true
+- **Learnings for future iterations:**
+  - The `.github/workflows/` directory did not exist; create it with `mkdir -p` before writing the workflow file
+  - `actions/checkout@v4` and `actions/setup-node@v4` are the current LTS action versions
+  - Omitting `branches` filter from `on: push/pull_request` triggers on all branches (correct per requirements)
+---
+
 ## Codebase Patterns
 - service-worker.js registers event listeners at module load time — set up `global.chrome` via `setupChromeMock()` in `beforeAll` BEFORE the dynamic `import('../../service-worker.js')`, then capture handlers via `addListener.mock.calls[0][0]`
 - Dynamic import in `beforeAll` (not static import) is required for service-worker.js so that chrome mock is in place when listeners are registered

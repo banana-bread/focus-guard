@@ -16,6 +16,14 @@
   - The `node_modules/` is in `.gitignore` so only config files need to be committed
 ---
 
+## 2026-03-02 - US-003
+- What was implemented: Added `export` keyword to `handleMessage` function in `service-worker.js`
+- Files changed: `service-worker.js`, `.chief/prds/tests/prd.json`
+- **Learnings for future iterations:**
+  - `handleMessage` is now importable directly in tests — import it with `import { handleMessage } from '../service-worker.js'`
+  - The function is still wired to `onMessage` inside the same file, so runtime behavior is unchanged
+---
+
 ## 2026-03-02 - US-002
 - What was implemented: Created `test/mocks/chrome.js` with `buildChromeMock()` factory covering all chrome API surfaces used by the extension
 - Files changed: `test/mocks/chrome.js`, `.chief/prds/tests/prd.json`

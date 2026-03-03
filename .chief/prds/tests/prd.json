@@ -38,7 +38,8 @@
         "No other refactoring is required"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-004",

@@ -89,7 +89,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-async function handleMessage(message) {
+export async function handleMessage(message) {
   const { type, payload } = message;
 
   switch (type) {

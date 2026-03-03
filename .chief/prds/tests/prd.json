@@ -25,8 +25,8 @@
         "Each test file assigns `global.chrome = buildChromeMock()` in `beforeEach` and resets it in `afterEach`"
       ],
       "priority": 2,
-      "passes": false,
-      "inProgress": true
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-003",

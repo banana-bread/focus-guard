@@ -72,7 +72,8 @@
         "Unknown message type — returns `{ error: \"Unknown message type: …\" }`"
       ],
       "priority": 4,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-005",
@@ -97,7 +98,8 @@
         "Error handling: generic error thrown → status shows `\"Error: \u003cmessage\u003e\"`, button re-enabled"
       ],
       "priority": 5,
-      "passes": false
+      "passes": false,
+      "inProgress": true
     },
     {
       "id": "US-006",

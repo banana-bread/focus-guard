@@ -4,6 +4,10 @@
 - Project root: `/Users/adriano/code/focus-guard/`
 - Test files go in `test/**/*.test.js`
 - Chrome mock in `test/mocks/chrome.js` — use `buildChromeMock()` in `beforeEach`; access `chrome.storage.local._data` to pre-seed storage state
+- Use `vi.resetModules()` + dynamic `import()` in `beforeEach` to get fresh module state (especially for module-level Maps like `pendingChallenges`)
+- `vi.mock('../lib/webauthn.js')` at top level works with `vi.resetModules()` — mock factory re-executes on each re-import, yielding fresh `vi.fn()` instances
+- Import the mocked module after `vi.resetModules()` to get fresh mock references for `.mockResolvedValue()` etc.
+- `vi.useFakeTimers()` + `vi.setSystemTime()` works for testing time-dependent logic; call `vi.useRealTimers()` in `afterEach` to clean up
 
 ---
 
@@ -22,6 +26,17 @@
 - **Learnings for future iterations:**
   - `handleMessage` is now importable directly in tests — import it with `import { handleMessage } from '../service-worker.js'`
   - The function is still wired to `onMessage` inside the same file, so runtime behavior is unchanged
+---
+
+## 2026-03-02 - US-004
+- What was implemented: Created `test/service-worker.test.js` with 24 tests covering all `handleMessage` cases: GET_STATE, GET_BLOCKLIST, ADD_DOMAIN (4 cases), REMOVE_DOMAIN (3 cases), GET_CHALLENGE (3 cases), UNLOCK_DOMAIN (8 cases), UPDATE_SETTINGS (2 cases), CLEAR_CREDENTIAL, unknown type
+- Files changed: `test/service-worker.test.js`, `.chief/prds/tests/prd.json`
+- **Learnings for future iterations:**
+  - `pendingChallenges` is module-level state in `service-worker.js` — use `vi.resetModules()` + dynamic import in `beforeEach` to get a fresh map each test
+  - Mock `lib/webauthn.js` at top level with `vi.mock()` — after `vi.resetModules()`, re-import the mocked module to get fresh `vi.fn()` references
+  - Pre-seed `chrome.declarativeNetRequest` rules by calling `updateDynamicRules({ addRules: [...] })` on the mock directly
+  - `storage.js` uses `result[key] ?? DEFAULTS[key]` — unset keys correctly fall back to defaults (e.g. `credential: null`, `unlocks: {}`)
+  - UNLOCK_DOMAIN checks blocklist BEFORE checking pending challenge — "domain not in blocklist" test doesn't need a prior GET_CHALLENGE
 ---
 
 ## 2026-03-02 - US-002

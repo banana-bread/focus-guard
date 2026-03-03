@@ -1,4 +1,8 @@
 ## Codebase Patterns
+- For blocked.js tests: use `Object.defineProperty(window, 'location', { value: { search, href: '' }, writable: true, configurable: true })` to mock location before each import
+- Use `Object.defineProperty(global.navigator, 'credentials', { value: { get: vi.fn() }, writable: true, configurable: true })` to mock credentials API in jsdom
+- `await flush()` (= `new Promise(resolve => setTimeout(resolve, 0))`) flushes all pending microtasks after triggering a click — sufficient because sendMessage callbacks are called synchronously by the mock
+- The synchronous part of an async click handler (e.g. disabling a button, setting text) runs before the first `await`, so you can assert it immediately after `.click()` without awaiting
 - vitest and jsdom are already installed in `node_modules/` (no npm install needed)
 - Use `passWithNoTests: true` in vitest config to avoid exit code 1 with no test files
 - Project root: `/Users/adriano/code/focus-guard/`
@@ -37,6 +41,18 @@
   - Pre-seed `chrome.declarativeNetRequest` rules by calling `updateDynamicRules({ addRules: [...] })` on the mock directly
   - `storage.js` uses `result[key] ?? DEFAULTS[key]` — unset keys correctly fall back to defaults (e.g. `credential: null`, `unlocks: {}`)
   - UNLOCK_DOMAIN checks blocklist BEFORE checking pending challenge — "domain not in blocklist" test doesn't need a prior GET_CHALLENGE
+---
+
+## 2026-03-02 - US-005
+- What was implemented: Created `test/blocked.test.js` with 14 tests covering domain display, open-redirect guard, unlock button enabled state, full unlock flow, and error handling
+- Files changed: `test/blocked.test.js`, `.chief/prds/tests/prd.json`
+- **Learnings for future iterations:**
+  - Mock `window.location` with `Object.defineProperty(window, 'location', { value: { search, href: '' }, writable: true, configurable: true })` — set BEFORE `loadBlocked()` since blocked.js reads `window.location.search` at module load time
+  - `Object.defineProperty(global.navigator, 'credentials', { value: { get: vi.fn() }, writable: true, configurable: true })` works in jsdom to add the Credentials API
+  - A `flush()` helper (`new Promise(resolve => setTimeout(resolve, 0))`) reliably flushes the entire async click handler chain because all sendMessage callbacks are synchronous in the mock
+  - The synchronous part of the click handler (disabling button, setting "Verifying…") runs before the first `await`, so can be asserted right after `.click()` before `await flush()`
+  - `vi.mock('../lib/webauthn.js')` at top level mocks both `base64urlDecode` and `base64urlEncode` — blocked.js uses both
+  - `lib/normalize.js` does NOT need to be mocked — real normalization is needed for the open-redirect guard test (`Reddit.com` → `reddit.com`)
 ---
 
 ## 2026-03-02 - US-002

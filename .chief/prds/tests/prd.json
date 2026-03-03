@@ -98,8 +98,8 @@
         "Error handling: generic error thrown → status shows `\"Error: \u003cmessage\u003e\"`, button re-enabled"
       ],
       "priority": 5,
-      "passes": false,
-      "inProgress": true
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-006",

@@ -10,7 +10,7 @@
 
 **Tech stack:**
 - TypeScript (strict mode)
-- esbuild or Vite for bundling (zero runtime deps preferred, but build-time tooling is fine)
+- Vite for bundling (zero runtime deps preferred, but build-time tooling is fine)
 - Chromium MV3 (target: Brave, Chrome)
 - No frameworks — vanilla TS for UI
 

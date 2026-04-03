@@ -90,20 +90,14 @@ So that <benefit/value>
 
 **Use specialized subagents when beneficial for external research:**
 
+**Important:** Project documents (PRDs, READMEs, specs, existing configs) are **secondary sources** — they reflect a point in time. For anything implementation-specific, always go to primary sources: official documentation, package registries, changelogs, and release notes. Do not let an existing project document substitute for this research.
+
 **Documentation Gathering:**
 
-- Research latest library versions and best practices
-- Find official documentation with specific section anchors
-- Locate implementation examples and tutorials
-- Identify common gotchas and known issues
-- Check for breaking changes and migration guides
-
-**Technology Trends:**
-
-- Research current best practices for the technology stack
-- Find relevant blog posts, guides, or case studies
-- Identify performance optimization patterns
-- Document security considerations
+- Go to official documentation and primary sources for every library, framework, or API involved — even ones you're familiar with
+- Locate the specific sections relevant to this feature (configuration, integration, known limitations)
+- Identify common gotchas, known issues, and breaking changes since the project documents were written
+- Check migration guides if the feature spans multiple library versions
 
 **Compile Research References:**
 

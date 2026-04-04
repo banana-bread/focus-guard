@@ -28,20 +28,16 @@ export default defineConfig(
     },
   },
 
-  // import-x: named exports + import ordering
+  // import-x: named exports only (resolver-dependent rules disabled — tsc handles module resolution)
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   {
     rules: {
       'import-x/no-default-export': 'error',
-    },
-    settings: {
-      'import-x/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: './tsconfig.json',
-        },
-      },
+      // Disable resolver-dependent rules — TypeScript strict mode handles these
+      'import-x/no-unresolved': 'off',
+      'import-x/namespace': 'off',
+      'import-x/no-duplicates': 'off',
     },
   },
 

@@ -16,7 +16,7 @@
   "lint-staged": {
     "src/**/*.ts": [
       "eslint --fix",
-      "tsc --noEmit"
+      "bash -c 'tsc --noEmit -p tsconfig.json'"
     ]
   },
   "simple-git-hooks": {
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/chrome": "latest",
+    "@types/node": "^25.5.2",
     "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",

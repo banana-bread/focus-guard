@@ -1,4 +1,4 @@
-<!-- ---
+---
 description: Technical code review for quality and bugs that runs pre-commit
 ---
 
@@ -20,9 +20,9 @@ Start by gathering codebase context to understand the codebase standards and pat
 Start by examining:
 
 - CLAUDE.md
-- README.md
-- Key files in the /core module
-- Documented standards in the /docs directory
+- Key files in `src/core/` (logger, messages, storage)
+- Architecture patterns in `.agents/reference/vsa-patterns.md`
+- Validation standards in `.agents/reference/validation-pyramid.md`
 
 After you have a good understanding
 
@@ -51,10 +51,12 @@ For each changed file or new file, analyze for:
    - Race conditions
 
 2. **Security Issues**
-   - SQL injection vulnerabilities
-   - XSS vulnerabilities
-   - Insecure data handling
-   - Exposed secrets or API keys
+   - WebAuthn trust boundary violations (state mutations outside service worker)
+   - Missing transport filtering or AAGUID allowlist checks
+   - Single-use challenge not enforced or TTL not respected
+   - Sign counter monotonicity not checked (clone detection)
+   - Sensitive data logged (raw assertions, credentials, keys)
+   - `chrome.runtime.sendMessage` calls not using typed `RequestMessage`
 
 3. **Performance Problems**
    - N+1 queries
@@ -69,10 +71,12 @@ For each changed file or new file, analyze for:
    - Missing type hints/annotations
 
 5. **Adherence to Codebase Standards and Existing Patterns**
-   - Adherence to standards documented in the /docs directory
-   - Linting, typing, and formatting standards
-   - Logging standards
-   - Testing standards
+   - VSA slice boundaries respected (no cross-slice imports; shared utilities in `shared/` only if used by 3+ slices)
+   - Strict TypeScript: no implicit `any`, explicit type annotations on all functions and variables
+   - Logging: structured objects (not string interpolation), `snake_case` event names, `trace_id` on cross-boundary logs, `fix_suggestion` on error/warn
+   - File size: flag files approaching or exceeding ~300 lines as refactor candidates
+   - No default exports; named exports only
+   - JSDoc on all exported symbols
 
 ## Verify Issues Are Real
 
@@ -96,7 +100,7 @@ Save a new file to `.agents/code-reviews/[appropriate-name].md`
 
 ```
 severity: critical|high|medium|low
-file: path/to/file.py
+file: path/to/file.ts
 line: 42
 issue: [one-line description]
 detail: [explanation of why this is a problem]
@@ -110,4 +114,4 @@ If no issues found: "Code review passed. No technical issues detected."
 - Be specific (line numbers, not vague complaints)
 - Focus on real bugs, not style
 - Suggest fixes, don't just complain
-- Flag security issues as CRITICAL -->
+- Flag security issues as CRITICAL

@@ -1,4 +1,4 @@
-<!-- ---
+---
 description: Process to fix bugs found in manual/AI code review
 ---
 
@@ -15,4 +15,4 @@ For each fix:
 2. Show the fix
 3. Create and run relevant tests to verify
 
-After all fixes, run the validate command (see commands/validate.md) to finalize your fixes. -->
+After all fixes, run the validate command (see .claude/commands/validation/validate.md) to finalize your fixes.

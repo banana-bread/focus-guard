@@ -2,15 +2,7 @@ Run comprehensive validation of the project to ensure all tests, type checks, li
 
 Execute the following commands in sequence and report results:
 
-## 1. Type Checking
-
-```bash
-pnpm typecheck
-```
-
-**Expected:** Zero errors
-
-## 2. Linting
+## 1. Linting
 
 ```bash
 pnpm lint
@@ -18,7 +10,23 @@ pnpm lint
 
 **Expected:** Zero errors
 
-## 3. Test Suite
+## 2. Formatting
+
+```bash
+pnpm format:check
+```
+
+**Expected:** Zero formatting violations
+
+## 3. Type Checking
+
+```bash
+pnpm typecheck
+```
+
+**Expected:** Zero errors
+
+## 4. Test Suite
 
 ```bash
 pnpm test
@@ -26,7 +34,7 @@ pnpm test
 
 **Expected:** All tests pass
 
-## 4. Build
+## 5. Build
 
 ```bash
 pnpm build
@@ -34,12 +42,13 @@ pnpm build
 
 **Expected:** Build completes with no errors
 
-## 5. Summary Report
+## 6. Summary Report
 
 After all validations complete, provide a summary report with:
 
-- Type checking status
 - Linting status
+- Formatting status
+- Type checking status
 - Test results (passed/failed count)
 - Build status
 - Any errors or warnings encountered

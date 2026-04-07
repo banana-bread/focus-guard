@@ -308,27 +308,31 @@ Design unit tests with fixtures and assertions following existing testing approa
 
 <Define validation commands based on project's tools discovered in Phase 2>
 
-Execute every command to ensure zero regressions and 100% feature correctness.
+Execute every command in pyramid order. Each level gates the next — do not proceed if a level fails. See `.agents/reference/validation-pyramid.md` for full rationale.
 
 ### Level 1: Syntax & Style
 
 <Project-specific linting and formatting commands>
 
-### Level 2: Unit Tests
+### Level 2: Type Safety
+
+<Project-specific type checking commands>
+
+### Level 3: Unit Tests
 
 <Project-specific unit test commands>
 
-### Level 3: Integration Tests
+### Level 4: Integration Tests
 
 <Project-specific integration test commands>
 
-### Level 4: Manual Validation
+### Level 5: Manual Validation
 
-<Feature-specific manual testing steps - API calls, UI testing, etc.>
+<Feature-specific manual testing steps - extension load, UI testing, etc.>
 
-### Level 5: Additional Validation (Optional)
+### Level 6: Build
 
-<MCP servers or additional CLI tools if available>
+<Build command to verify the final artifact compiles cleanly>
 
 ---
 

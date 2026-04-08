@@ -312,7 +312,10 @@ Execute every command in pyramid order. Each level gates the next — do not pro
 
 ### Level 1: Syntax & Style
 
-<Project-specific linting and formatting commands>
+```bash
+pnpm lint
+pnpm format:check
+```
 
 ### Level 2: Type Safety
 

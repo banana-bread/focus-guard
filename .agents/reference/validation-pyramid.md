@@ -33,7 +33,7 @@ Each level gates the next. Don't proceed if a level fails.
 
 ```bash
 pnpm lint
-pnpm format:check
+pnpm format:check   # Prettier — run after lint, before typecheck
 ```
 
 **AI Integration:** Run automatically after file writes
@@ -143,14 +143,9 @@ When you see the same validation failures repeatedly, that's a signal to improve
 
 | Level | Command | Status |
 |-------|---------|--------|
-| 1 — Syntax & Style | `pnpm lint` | ✅ covered |
+| 1 — Syntax & Style | `pnpm lint && pnpm format:check` | ✅ covered |
 | 2 — Type Safety | `pnpm typecheck` | ✅ covered |
 | 3 — Unit Tests | `pnpm test` | ✅ covered |
 | 4 — Integration Tests | `pnpm test` (shared suite) | ⚠️ partial |
 | 5 — Human Review | manual | — |
-
-### Recommended Additions to `/validate`
-
-- **`pnpm format:check`** — currently `lint` runs ESLint but Prettier formatting is not explicitly checked. Add as a distinct step between lint and typecheck.
-- **`pnpm build`** — the build step is not in the current `/validate` command. A passing test suite with a broken bundle is a false green. Add it as the final automated gate.
-- **Explicit ordering** — enforce pyramid order with early exit: lint → format → typecheck → test → build.
+| Build | `pnpm build` | ✅ covered |

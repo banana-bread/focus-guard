@@ -6,8 +6,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'src/index.ts'),
-        // TODO: Replace with real extension entry points in feature PRD
+        'service-worker': resolve(__dirname, 'src/service-worker.ts'),
       },
       output: {
         entryFileNames: '[name].js',

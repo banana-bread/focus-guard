@@ -20,7 +20,12 @@ export interface Logger {
   error: (event: string, fields?: Record<string, unknown>) => void;
 }
 
-function emit(context: Context, level: LogLevel, event: string, fields: Record<string, unknown> = {}): void {
+function emit(
+  context: Context,
+  level: LogLevel,
+  event: string,
+  fields: Record<string, unknown> = {},
+): void {
   if (process.env['VITEST']) return;
 
   const entry: LogEntry = { level, event, context, ...fields };
@@ -36,9 +41,13 @@ function emit(context: Context, level: LogLevel, event: string, fields: Record<s
  */
 export function createLogger(context: Context): Logger {
   return {
-    debug: (event: string, fields?: Record<string, unknown>): void => emit(context, 'debug', event, fields),
-    info: (event: string, fields?: Record<string, unknown>): void => emit(context, 'info', event, fields),
-    warn: (event: string, fields?: Record<string, unknown>): void => emit(context, 'warn', event, fields),
-    error: (event: string, fields?: Record<string, unknown>): void => emit(context, 'error', event, fields),
+    debug: (event: string, fields?: Record<string, unknown>): void =>
+      emit(context, 'debug', event, fields),
+    info: (event: string, fields?: Record<string, unknown>): void =>
+      emit(context, 'info', event, fields),
+    warn: (event: string, fields?: Record<string, unknown>): void =>
+      emit(context, 'warn', event, fields),
+    error: (event: string, fields?: Record<string, unknown>): void =>
+      emit(context, 'error', event, fields),
   };
 }

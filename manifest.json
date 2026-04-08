@@ -3,10 +3,15 @@
   "name": "Focus Guard",
   "version": "0.1.0",
   "description": "Block distracting websites; unlock with a hardware security key.",
-  "permissions": [],
-  "host_permissions": [],
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "TODO: service-worker.js",
+    "service_worker": "service-worker.js",
     "type": "module"
   },
   "action": {

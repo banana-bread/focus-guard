@@ -31,6 +31,28 @@ Vertical Slice Architecture (VSA). See `.agents/reference/vsa-patterns.md` for t
 - **Removing a domain or clearing a credential requires WebAuthn verification.** No exceptions.
 - **Challenges are single-use, 2-minute TTL, keyed by domain**, stored in service worker memory (not storage).
 
+## Chrome API Patterns
+
+**`chrome.storage.local.get` callback must be explicitly typed:**
+
+```typescript
+chrome.storage.local.get(key, (result: Record<string, unknown>) => {
+  resolve(result[key] as T | undefined);
+});
+```
+
+The callback parameter cannot be inferred in strict mode (`noImplicitAny`). Always annotate as `Record<string, unknown>`.
+
+**Prefer top-level `import type` over inline `import()` type references:**
+
+```typescript
+// ✅ Correct
+import type { Settings } from '@/core/storage';
+
+// ❌ Avoid — looks like a dynamic import
+| { settings: Partial<import('@/core/storage').Settings> }
+```
+
 ## Security Model
 
 - WebAuthn hardware-only: `cross-platform` attachment, transport filter (reject `internal`/`hybrid`), AAGUID allowlist, attestation verification

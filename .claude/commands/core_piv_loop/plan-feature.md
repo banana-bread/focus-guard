@@ -12,7 +12,7 @@ Transform a feature request into a **comprehensive implementation plan** through
 
 **Core Principle**: We do NOT write code in this phase. Our goal is to create a context-rich implementation plan that enables one-pass implementation success for ai agents.
 
-**Key Philosophy**: Context is King. The plan must contain ALL information needed for implementation - patterns, mandatory reading, documentation, validation commands - so the execution agent succeeds on the first attempt.
+**Key Philosophy**: Context is King — but density beats length. The plan must contain ALL information needed for implementation while staying within **500–700 lines**. If the plan would exceed 700 lines, the feature is too large — **stop and tell the user** what subset to tackle first. Do NOT generate a speculative second plan (it will go stale after execution divergence).
 
 ## Planning Process
 
@@ -25,6 +25,15 @@ Transform a feature request into a **comprehensive implementation plan** through
 - Determine feature type: New Capability/Enhancement/Refactor/Bug Fix
 - Assess complexity: Low/Medium/High
 - Map affected systems and components
+
+**Scope Check — BEFORE proceeding:**
+
+Estimate how many new files, modified files, and test files the feature requires. If the total exceeds ~20 files or the plan would need more than 700 lines to describe precisely, **stop and tell the user**:
+- What the feature requires at a high level
+- Which subset you'd recommend as a first plan
+- What would be deferred to a follow-up plan (created AFTER the first is executed, so it reflects actual state)
+
+Do not proceed past this point if the feature is too large.
 
 **Create User Story Format Or Refine If Story Was Provided By The User:**
 
@@ -133,7 +142,21 @@ So that <benefit/value>
 
 ### Phase 5: Plan Structure Generation
 
-**Create comprehensive plan with the following structure:**
+**Create comprehensive plan with the following structure.**
+
+**Hard constraint: 500–700 lines.** Achieve density through:
+- Tables instead of verbose lists
+- Inline code only when the pattern is non-obvious — don't repeat what's in referenced files
+- One sentence per gotcha, not a paragraph
+- Combine related tasks when they always happen together
+- Reference existing files by path instead of quoting their contents
+
+**DON'T:**
+- Quote file contents that the implementer will read anyway
+- Write multi-line pseudo-CSS descriptions — use a single CSS custom properties block
+- Repeat the same gotcha/finding in multiple sections
+- Add both a "Phase 1/2/3" overview AND step-by-step tasks — the tasks ARE the phases
+- Include generic boilerplate acceptance criteria ("code follows conventions") — only feature-specific ones
 
 Whats below here is a template for you to fill for the implementation agent:
 
@@ -384,6 +407,12 @@ pnpm format:check
 
 ## Quality Criteria
 
+### Line Budget ✓
+
+- [ ] Plan is 500–700 lines (if over 700, you must stop and recommend scope reduction instead)
+- [ ] No information repeated across multiple sections
+- [ ] File contents referenced by path, not quoted
+
 ### Context Completeness ✓
 
 - [ ] All necessary patterns identified and documented
@@ -417,6 +446,8 @@ pnpm format:check
 
 **One-Pass Implementation**: Execution agent can complete feature without additional research or clarification
 
+**Line Budget**: Plan is 500–700 lines (under 500 is even better if nothing is lost)
+
 **Validation Complete**: Every task has at least one working validation command
 
 **Context Rich**: The Plan passes "No Prior Knowledge Test" - someone unfamiliar with codebase can implement using only Plan content
@@ -429,6 +460,6 @@ After creating the Plan, provide:
 
 - Summary of feature and approach
 - Full path to created Plan file
-- Complexity assessment
+- Line count (must be 500–700; if you had to recommend scope reduction, explain what was deferred)
 - Key implementation risks or considerations
-- Estimated confidence score for one-pass success
+- Confidence score for one-pass success

@@ -120,6 +120,7 @@ async function init(): Promise<void> {
   const statusResp = await sendMessage({ type: 'GET_CREDENTIAL_STATUS', trace_id });
 
   if (!statusResp.ok) {
+    show(sectionRegister);
     showError(registerError, 'Could not connect to extension. Try reopening the popup.');
     return;
   }
@@ -169,9 +170,15 @@ async function handleRegister(): Promise<void> {
           displayName: 'Focus Guard User',
         },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-        authenticatorSelection: { authenticatorAttachment: 'cross-platform' },
+        authenticatorSelection: {
+          authenticatorAttachment: 'cross-platform',
+          residentKey: 'discouraged',
+          userVerification: 'discouraged',
+        },
         attestation: 'direct',
-      },
+        // WebAuthn L3: suppress hybrid/QR prompt, show only USB security key UI
+        hints: ['security-key'],
+      } as PublicKeyCredentialCreationOptions,
     });
 
     if (!credential) {

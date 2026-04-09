@@ -5,8 +5,8 @@
  * are centralised here so feature slices have a single source of truth.
  */
 
-/** WebAuthn Relying Party ID — the extension's own ID at runtime. */
-export const RP_ID: string = chrome.runtime.id;
+/** WebAuthn Relying Party ID — the full extension origin, used as rpId by the browser. */
+export const RP_ID: string = `chrome-extension://${chrome.runtime.id}`;
 
 /** Human-readable Relying Party name shown in authenticator dialogs. */
 export const RP_NAME = 'Focus Guard';

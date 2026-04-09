@@ -42,7 +42,7 @@ export async function handleRegisterCredential(
   const attestation = new Uint8Array(msg.attestation);
   const clientDataJSON = new Uint8Array(msg.clientDataJSON);
   const expectedOrigin = `chrome-extension://${chrome.runtime.id}`;
-  const expectedRpId = chrome.runtime.id;
+  const expectedRpId = `chrome-extension://${chrome.runtime.id}`;
   try {
     const verified = await registerCredential(
       attestation,

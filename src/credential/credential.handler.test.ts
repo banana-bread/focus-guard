@@ -19,15 +19,15 @@ const storageMap = new Map<string, unknown>();
 beforeEach(() => {
   storageMap.clear();
   vi.mocked(chrome.storage.local.get).mockImplementation(((key: string) =>
-    Promise.resolve({ [key]: storageMap.get(key) })) as any);
+    Promise.resolve({ [key]: storageMap.get(key) })) as typeof chrome.storage.local.get);
   vi.mocked(chrome.storage.local.set).mockImplementation(((obj: Record<string, unknown>) => {
     for (const [k, v] of Object.entries(obj)) storageMap.set(k, v);
     return Promise.resolve();
-  }) as any);
+  }) as typeof chrome.storage.local.set);
   vi.mocked(chrome.storage.local.remove).mockImplementation(((key: string) => {
     storageMap.delete(key);
     return Promise.resolve();
-  }) as any);
+  }) as typeof chrome.storage.local.remove);
   mockVerifyRegistration.mockReset();
 });
 

@@ -1,33 +1,47 @@
 /**
  * Storage accessors for the registered WebAuthn credential.
  *
- * Handles deserialisation of `Uint8Array` / `ArrayBuffer` fields that
- * `chrome.storage.local` serialises as plain objects on read-back.
+ * Binary fields (credentialId, publicKey) are serialised as `number[]` in the wire
+ * format so they survive chrome.storage.local's JSON round-trip without data loss.
  */
 
 import { storageGet, storageSet, storageRemove, STORAGE_KEYS } from '@/core/storage';
 import type { StoredCredential } from '@/core/storage';
 
 /**
- * Deserialises a raw storage record into a `StoredCredential`.
+ * Wire format for a credential in chrome.storage.local.
  *
- * `chrome.storage.local` serialises `Uint8Array` / `ArrayBuffer` as plain objects on read-back.
- * This function reconstructs the correct typed values from those plain objects.
+ * Binary fields are stored as `number[]` so they survive JSON serialization faithfully.
+ * (`Uint8Array` serialises as `{0:1,…}` and `ArrayBuffer` as `{}` — both are lossy.)
  */
-function deserializeCredential(raw: Record<string, unknown>): StoredCredential {
-  const credentialId = new Uint8Array(Object.values(raw['credentialId'] as Record<number, number>));
-  // publicKey may already be an ArrayBuffer (same-session write) or a plain object after restart
-  const rawPublicKey = raw['publicKey'] as ArrayBuffer | { buffer?: ArrayBuffer };
-  const publicKey =
-    rawPublicKey instanceof ArrayBuffer
-      ? rawPublicKey
-      : ((rawPublicKey as { buffer?: ArrayBuffer }).buffer ?? new ArrayBuffer(0));
+interface StoredCredentialRaw {
+  credentialId: number[];
+  publicKey: number[];
+  signCounter: number;
+  aaguid: string;
+}
 
+/**
+ * Deserialises the raw storage record into a `StoredCredential`.
+ */
+function deserializeCredential(raw: StoredCredentialRaw): StoredCredential {
   return {
-    credentialId,
-    publicKey,
-    signCounter: raw['signCounter'] as number,
-    aaguid: raw['aaguid'] as string,
+    credentialId: new Uint8Array(raw.credentialId),
+    publicKey: new Uint8Array(raw.publicKey).buffer,
+    signCounter: raw.signCounter,
+    aaguid: raw.aaguid,
+  };
+}
+
+/**
+ * Serialises a `StoredCredential` to the wire format for chrome.storage.local.
+ */
+function serializeCredential(credential: StoredCredential): StoredCredentialRaw {
+  return {
+    credentialId: Array.from(credential.credentialId),
+    publicKey: Array.from(new Uint8Array(credential.publicKey)),
+    signCounter: credential.signCounter,
+    aaguid: credential.aaguid,
   };
 }
 
@@ -37,7 +51,7 @@ function deserializeCredential(raw: Record<string, unknown>): StoredCredential {
  * @returns The stored credential or `undefined`.
  */
 export async function getCredential(): Promise<StoredCredential | undefined> {
-  const raw = await storageGet<Record<string, unknown>>(STORAGE_KEYS.CREDENTIAL);
+  const raw = await storageGet<StoredCredentialRaw>(STORAGE_KEYS.CREDENTIAL);
   if (!raw) return undefined;
   return deserializeCredential(raw);
 }
@@ -48,7 +62,7 @@ export async function getCredential(): Promise<StoredCredential | undefined> {
  * @param credential - The credential to store.
  */
 export async function setCredential(credential: StoredCredential): Promise<void> {
-  return storageSet<StoredCredential>(STORAGE_KEYS.CREDENTIAL, credential);
+  return storageSet<StoredCredentialRaw>(STORAGE_KEYS.CREDENTIAL, serializeCredential(credential));
 }
 
 /**

@@ -14,7 +14,14 @@ import type { RequestMessage, ResponseMessage } from '@/core/messages';
 
 function sendMessage(msg: RequestMessage): Promise<ResponseMessage> {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage(msg, (response: ResponseMessage) => {
+    chrome.runtime.sendMessage(msg, (response: ResponseMessage | undefined) => {
+      if (chrome.runtime.lastError !== undefined || response === undefined) {
+        resolve({
+          ok: false,
+          error: chrome.runtime.lastError?.message ?? 'No response from extension',
+        });
+        return;
+      }
       resolve(response);
     });
   });
@@ -121,7 +128,7 @@ async function init(): Promise<void> {
 
   if (registered) {
     setRegisteredState();
-    const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id: crypto.randomUUID() });
+    const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id });
     if (listResp.ok) {
       renderBlocklist(listResp.data as string[]);
     }
@@ -179,7 +186,7 @@ async function handleRegister(): Promise<void> {
       type: 'REGISTER_CREDENTIAL',
       attestation: Array.from(new Uint8Array(response.attestationObject)),
       clientDataJSON: Array.from(new Uint8Array(response.clientDataJSON)),
-      trace_id: crypto.randomUUID(),
+      trace_id,
     });
 
     if (!registerResp.ok) {
@@ -207,11 +214,12 @@ async function handleAddDomain(): Promise<void> {
 
   if (btnAddDomain) btnAddDomain.disabled = true;
 
+  const trace_id = crypto.randomUUID();
   try {
     const resp = await sendMessage({
       type: 'ADD_DOMAIN',
       domain,
-      trace_id: crypto.randomUUID(),
+      trace_id,
     });
 
     if (!resp.ok) {
@@ -221,7 +229,7 @@ async function handleAddDomain(): Promise<void> {
 
     if (inputDomain) inputDomain.value = '';
 
-    const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id: crypto.randomUUID() });
+    const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id });
     if (listResp.ok) {
       renderBlocklist(listResp.data as string[]);
     }

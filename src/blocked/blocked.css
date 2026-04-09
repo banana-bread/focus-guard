@@ -1,0 +1,71 @@
+:root {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --border: #334155;
+  --accent: #3b82f6;
+  --text-primary: #f1f5f9;
+  --text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 40px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.shield-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.domain-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+.message {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+}

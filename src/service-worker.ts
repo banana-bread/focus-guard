@@ -1,14 +1,20 @@
 /**
  * Focus Guard MV3 service worker entry point.
  *
- * Registers a typed `chrome.runtime.onMessage` listener and fans out to slice handlers.
- * All state mutations and security checks must happen here — UI contexts only send messages
- * and render responses.
+ * Owns all message routing — maps each message type to its slice handler.
+ * All state mutations and security checks happen here or in the handlers called from here.
+ * UI contexts only send messages and render responses.
  */
 
 import { createLogger } from '@/core/logger';
 import type { RequestMessage, ResponseMessage } from '@/core/messages';
 import { errResponse } from '@/core/messages';
+import {
+  handleGetRegistrationChallenge,
+  handleRegisterCredential,
+  handleGetCredentialStatus,
+} from '@/credential/credential.handler';
+import { handleAddDomain, handleGetBlocklist } from '@/blocklist/blocklist.handler';
 
 const logger = createLogger('service_worker');
 
@@ -31,19 +37,40 @@ async function handleMessage(
   trace_id: string,
 ): Promise<void> {
   const start = Date.now();
+  let handled = true;
   try {
     switch (msg.type) {
-      // Slice handlers will be registered here in subsequent phases
-      default: {
+      case 'GET_REGISTRATION_CHALLENGE':
+        sendResponse(handleGetRegistrationChallenge(trace_id));
+        break;
+      case 'REGISTER_CREDENTIAL':
+        sendResponse(await handleRegisterCredential(msg, trace_id));
+        break;
+      case 'GET_CREDENTIAL_STATUS':
+        sendResponse(await handleGetCredentialStatus(trace_id));
+        break;
+      case 'ADD_DOMAIN':
+        sendResponse(await handleAddDomain(msg, trace_id));
+        break;
+      case 'GET_BLOCKLIST':
+        sendResponse(await handleGetBlocklist(trace_id));
+        break;
+      default:
+        handled = false;
         logger.warn('message_unhandled', {
           type: msg.type,
           trace_id,
-          fix_suggestion: 'Register a handler for this message type in service-worker.ts',
+          fix_suggestion: 'Add a case for this message type in service-worker.ts',
         });
         sendResponse(errResponse(`Unhandled message type: ${msg.type}`));
-      }
     }
-    logger.debug('message_handled', { type: msg.type, trace_id, duration_ms: Date.now() - start });
+    if (handled) {
+      logger.debug('message_handled', {
+        type: msg.type,
+        trace_id,
+        duration_ms: Date.now() - start,
+      });
+    }
   } catch (err) {
     logger.error('message_handler_threw', {
       type: msg.type,

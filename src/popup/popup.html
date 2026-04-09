@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Focus Guard</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="header">
+      <span>🛡</span>
+      <h1>Focus Guard</h1>
+      <span id="status-dot" class="status-dot unregistered" style="margin-left: auto"></span>
+    </div>
+
+    <!-- Register section: shown when no key registered -->
+    <div id="section-register" class="section hidden">
+      <p class="section-title">Hardware Key</p>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px">
+        Register a YubiKey to protect your blocklist.
+      </p>
+      <button id="btn-register" class="btn btn-primary btn-full">Register YubiKey</button>
+      <p id="register-error" class="error-text hidden"></p>
+    </div>
+
+    <!-- Key status section: shown when key is registered -->
+    <div id="section-key-status" class="section hidden">
+      <p class="section-title">Hardware Key</p>
+      <div class="key-registered-badge">
+        <span class="status-dot registered"></span>
+        YubiKey registered
+      </div>
+    </div>
+
+    <!-- Add domain section: shown when key is registered -->
+    <div id="section-add-domain" class="section hidden">
+      <p class="section-title">Block a Site</p>
+      <input id="input-domain" class="input" type="text" placeholder="e.g. reddit.com" />
+      <button id="btn-add-domain" class="btn btn-primary btn-full">Add to Blocklist</button>
+      <p id="add-domain-error" class="error-text hidden"></p>
+    </div>
+
+    <!-- Blocklist section: shown when key is registered -->
+    <div id="section-blocklist" class="section hidden">
+      <p class="section-title">Blocked Sites</p>
+      <ul id="domain-list" class="domain-list"></ul>
+      <p id="empty-state" class="empty-state hidden">No sites blocked yet.</p>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

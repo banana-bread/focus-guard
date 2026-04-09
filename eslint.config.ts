@@ -47,6 +47,8 @@ export default defineConfig(
     rules: {
       'no-console': 'off',
       'import-x/no-default-export': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
 

@@ -7,10 +7,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'service-worker': resolve(__dirname, 'src/service-worker.ts'),
+        'popup/popup': resolve(__dirname, 'src/popup/popup.ts'),
+        'blocked/blocked': resolve(__dirname, 'src/blocked/blocked.ts'),
       },
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: 'chunks/[name].js',
+        assetFileNames: 'assets/[name][extname]',
       },
     },
     outDir: 'dist',
@@ -23,7 +26,10 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         { src: 'manifest.json', dest: '.' },
-        // TODO: Add HTML pages and icons here
+        { src: 'src/popup/popup.html', dest: 'popup' },
+        { src: 'src/popup/popup.css', dest: 'popup' },
+        { src: 'src/blocked/blocked.html', dest: 'blocked' },
+        { src: 'src/blocked/blocked.css', dest: 'blocked' },
       ],
     }),
   ],

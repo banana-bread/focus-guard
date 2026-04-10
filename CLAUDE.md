@@ -53,6 +53,39 @@ import type { Settings } from '@/core/storage';
 | { settings: Partial<import('@/core/storage').Settings> }
 ```
 
+**`exactOptionalPropertyTypes` — spread-conditional for optional fields:**
+
+This project enables `exactOptionalPropertyTypes: true`. You **cannot** assign `T | undefined` to an `?: T` field — the types are distinct. Use the spread-conditional idiom at every construction site for optional message fields:
+
+```typescript
+// ✅ Correct
+const msg = {
+  type: 'VERIFY_ASSERTION',
+  domain,
+  ...(transport !== undefined ? { transport } : {}),
+};
+
+// ❌ Fails to compile
+const msg = { type: 'VERIFY_ASSERTION', domain, transport }; // transport may be undefined
+```
+
+This applies wherever an optional field is conditionally present: message types, storage objects, handler test fixtures.
+
+**WebAuthn DOM type gaps:**
+
+The following WebAuthn Level 3 APIs are valid at runtime (Chrome 128+) but absent from TypeScript's bundled DOM lib:
+
+| API | Workaround |
+|-----|------------|
+| `hints: ['security-key']` in credential request options | Cast the full options object: `options as PublicKeyCredentialRequestOptions` |
+| `assertionResponse.getTransports()` | Cast: `(assertionResponse as unknown as { getTransports?: () => string[] }).getTransports?.()` |
+
+Do not rely on the TS lib types covering these fields — always use the cast workaround.
+
+**Plan snippets may not compile verbatim:**
+
+Code snippets in implementation plans are illustrative. Any property referencing a Chrome-specific or WebAuthn Level 3 API (`hints`, `getTransports`, etc.) may require a type cast. Verify against the project's TS lib before assuming direct assignment compiles.
+
 ## Security Model
 
 - WebAuthn hardware-only: `cross-platform` attachment, transport filter (reject `internal`/`hybrid`), AAGUID allowlist, attestation verification

@@ -94,6 +94,10 @@ export async function handleGetUnlockSession(
   trace_id: string,
 ): Promise<ResponseMessage> {
   const session = await getSession(msg.domain);
-  logger.debug('unlock_session_queried', { domain: msg.domain, trace_id, found: session !== undefined });
+  logger.debug('unlock_session_queried', {
+    domain: msg.domain,
+    trace_id,
+    found: session !== undefined,
+  });
   return okResponse(session ?? null);
 }

@@ -132,6 +132,18 @@ body {
   white-space: nowrap;
 }
 
+.domain-timer {
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+.domain-timer.active {
+  color: var(--success);
+}
+
 .empty-state {
   color: var(--text-muted);
   font-size: 13px;

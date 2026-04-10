@@ -1,6 +1,6 @@
 /**
  * Blocked page script.
- * Reads ?domain= and renders either the unlock UI or the countdown timer.
+ * Reads ?domain= and ?url= query params, shows unlock UI, then redirects to original URL on success.
  * Communicates with service worker via chrome.runtime.sendMessage.
  */
 
@@ -33,16 +33,6 @@ function hide(el: HTMLElement | null): void {
   el?.classList.add('hidden');
 }
 
-/**
- * Formats milliseconds as MM:SS.
- */
-function formatTime(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
 // ---------------------------------------------------------------------------
 // DOM references
 // ---------------------------------------------------------------------------
@@ -50,13 +40,17 @@ function formatTime(ms: number): string {
 const params = new URLSearchParams(window.location.search);
 const domain = params.get('domain') ?? 'Unknown site';
 
+// Use indexOf to avoid URLSearchParams truncating at embedded & chars in the original URL
+const search = window.location.search;
+const urlMarker = '&url=';
+const urlIdx = search.indexOf(urlMarker);
+const originalUrl = urlIdx !== -1 ? search.slice(urlIdx + urlMarker.length) : null;
+
 const domainEl = document.getElementById('domain');
 const stateLocked = document.getElementById('state-locked');
-const stateUnlocked = document.getElementById('state-unlocked');
 const btnUnlock = document.getElementById('btn-unlock') as HTMLButtonElement | null;
 const durationSelect = document.getElementById('duration-select') as HTMLSelectElement | null;
 const unlockError = document.getElementById('unlock-error');
-const timerEl = document.getElementById('timer');
 
 if (domainEl) {
   domainEl.textContent = domain;
@@ -66,43 +60,11 @@ if (domainEl) {
 // State transitions
 // ---------------------------------------------------------------------------
 
-let countdownInterval: ReturnType<typeof setInterval> | null = null;
-
-function startCountdown(expiresAt: number): void {
-  if (countdownInterval !== null) {
-    clearInterval(countdownInterval);
-  }
-
-  const tick = (): void => {
-    const remaining = expiresAt - Date.now();
-    if (timerEl) {
-      timerEl.textContent = formatTime(remaining);
-    }
-    if (remaining <= 0) {
-      if (countdownInterval !== null) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-      showLockedState();
-    }
-  };
-
-  tick();
-  countdownInterval = setInterval(tick, 1000);
-}
-
 function showLockedState(): void {
   show(stateLocked);
-  hide(stateUnlocked);
   if (btnUnlock) {
     btnUnlock.disabled = false;
   }
-}
-
-function showUnlockedState(expiresAt: number): void {
-  hide(stateLocked);
-  show(stateUnlocked);
-  startCountdown(expiresAt);
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +125,8 @@ async function handleUnlock(): Promise<void> {
 
     const assertionResponse = (pkc as PublicKeyCredential)
       .response as AuthenticatorAssertionResponse;
-    const getTransports = (assertionResponse as unknown as { getTransports?: () => string[] }).getTransports;
+    const getTransports = (assertionResponse as unknown as { getTransports?: () => string[] })
+      .getTransports;
     const transport = getTransports?.()[0];
 
     // Step 3: Verify assertion
@@ -183,19 +146,10 @@ async function handleUnlock(): Promise<void> {
       throw new Error(verifyResp.error);
     }
 
-    // Step 4: Get exact expiresAt from service worker
-    const sessionResp = await sendMessage({
-      type: 'GET_UNLOCK_SESSION',
-      domain,
-      trace_id,
-    });
-
-    if (sessionResp.ok && sessionResp.data !== null) {
-      const session = sessionResp.data as { expiresAt: number };
-      showUnlockedState(session.expiresAt);
-    } else {
-      showUnlockedState(Date.now() + durationMs);
-    }
+    // Step 4: Redirect to original URL
+    const target = originalUrl ?? `https://${domain}`;
+    window.location.replace(target);
+    return;
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unlock failed';
     if (unlockError) {
@@ -219,11 +173,11 @@ async function init(): Promise<void> {
   });
 
   if (sessionResp.ok && sessionResp.data !== null) {
-    const session = sessionResp.data as { expiresAt: number };
-    showUnlockedState(session.expiresAt);
-  } else {
-    showLockedState();
+    // Domain already unlocked — redirect away from blocked page
+    window.location.replace(originalUrl ?? `https://${domain}`);
+    return;
   }
+  showLockedState();
 }
 
 btnUnlock?.addEventListener('click', () => {

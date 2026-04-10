@@ -14,6 +14,7 @@ const chrome = {
       addListener: vi.fn(),
       removeListener: vi.fn(),
     },
+    getURL: vi.fn((path: string) => `chrome-extension://test-extension-id${path}`),
     id: 'test-extension-id',
     lastError: undefined as chrome.runtime.LastError | undefined,
   },

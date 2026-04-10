@@ -14,9 +14,7 @@ beforeEach(() => {
     return Promise.resolve();
   }) as typeof chrome.storage.local.set);
   vi.mocked(chrome.declarativeNetRequest.updateDynamicRules).mockResolvedValue(undefined);
-  vi.mocked(chrome.declarativeNetRequest.getDynamicRules).mockResolvedValue(
-    [] as unknown as void,
-  );
+  vi.mocked(chrome.declarativeNetRequest.getDynamicRules).mockResolvedValue([] as unknown as void);
 });
 
 describe('handleAddDomain', () => {
@@ -37,8 +35,8 @@ describe('handleAddDomain', () => {
     expect(lastCall.addRules).toHaveLength(1);
     const rule = lastCall.addRules[0]!;
     expect(rule.action.type).toBe('redirect');
-    expect(rule.action.redirect?.extensionPath).toContain('reddit.com');
-    expect(rule.condition.urlFilter).toContain('reddit.com');
+    expect(rule.action.redirect?.regexSubstitution).toContain('reddit.com');
+    expect(rule.condition.regexFilter).toContain('reddit\\.com');
   });
 
   it('normalises URL input', async () => {
@@ -53,8 +51,8 @@ describe('handleAddDomain', () => {
     const lastCall = calls[calls.length - 1]![0] as {
       addRules: chrome.declarativeNetRequest.Rule[];
     };
-    expect(lastCall.addRules[0]?.condition.urlFilter).toContain('twitter.com');
-    expect(lastCall.addRules[0]?.condition.urlFilter).not.toContain('www.');
+    expect(lastCall.addRules[0]?.condition.regexFilter).toContain('twitter\\.com');
+    expect(lastCall.addRules[0]?.condition.regexFilter).not.toContain('www\\.');
   });
 
   it('ignores duplicates', async () => {

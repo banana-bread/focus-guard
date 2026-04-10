@@ -69,3 +69,11 @@ body {
   font-size: 13px;
   font-style: italic;
 }
+
+.btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.unlock-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+select { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 14px; }
+.timer { font-size: 36px; font-weight: 700; color: var(--accent); margin-top: 8px; letter-spacing: 0.05em; }
+.error { color: #f87171; font-size: 13px; margin-top: 10px; }
+.hidden { display: none; }

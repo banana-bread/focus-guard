@@ -15,8 +15,21 @@ import {
   handleGetCredentialStatus,
 } from '@/credential/credential.handler';
 import { handleAddDomain, handleGetBlocklist } from '@/blocklist/blocklist.handler';
+import {
+  handleGetAssertionChallenge,
+  handleVerifyAssertion,
+  handleGetUnlockSession,
+} from '@/unlock/unlock.handler';
+import { endSession } from '@/unlock/unlock.service';
 
 const logger = createLogger('service_worker');
+
+chrome.alarms.onAlarm.addListener((alarm: chrome.alarms.Alarm) => {
+  if (alarm.name.startsWith('relock:')) {
+    const domain = alarm.name.slice('relock:'.length);
+    void endSession(domain, crypto.randomUUID());
+  }
+});
 
 chrome.runtime.onMessage.addListener(
   (msg: RequestMessage, _sender, sendResponse: (r: ResponseMessage) => void): true => {
@@ -54,6 +67,15 @@ async function handleMessage(
         break;
       case 'GET_BLOCKLIST':
         sendResponse(await handleGetBlocklist(trace_id));
+        break;
+      case 'GET_ASSERTION_CHALLENGE':
+        sendResponse(await handleGetAssertionChallenge(msg, trace_id));
+        break;
+      case 'VERIFY_ASSERTION':
+        sendResponse(await handleVerifyAssertion(msg, trace_id));
+        break;
+      case 'GET_UNLOCK_SESSION':
+        sendResponse(await handleGetUnlockSession(msg, trace_id));
         break;
       default:
         handled = false;

@@ -36,7 +36,10 @@ export type RequestMessage =
     }
   | {
       type: 'VERIFY_ASSERTION';
-      assertion: number[];
+      authenticatorData: number[];
+      clientDataJSON: number[];
+      signature: number[];
+      transport?: string;
       operation: AssertionOperation;
       domain?: string;
       durationMs?: number;

@@ -5,7 +5,7 @@
  * are centralised here so feature slices have a single source of truth.
  */
 
-/** WebAuthn Relying Party ID — the full extension origin, used as rpId by the browser. */
+/** WebAuthn Relying Party ID — the full extension origin, used as rpId by Chrome for extensions. */
 export const RP_ID: string = `chrome-extension://${chrome.runtime.id}`;
 
 /** Human-readable Relying Party name shown in authenticator dialogs. */

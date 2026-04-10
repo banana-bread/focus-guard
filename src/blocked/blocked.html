@@ -11,8 +11,26 @@
       <div class="shield-icon">🛡</div>
       <h1 class="heading">Site Blocked</h1>
       <p id="domain" class="domain-text"></p>
-      <p class="message">You added this site to your Focus Guard blocklist.</p>
-      <p class="hint">Unlock requires a hardware security key touch.</p>
+
+      <div id="state-locked">
+        <p class="message">This site is on your blocklist.</p>
+        <p class="hint">Touch your hardware key to unlock temporarily.</p>
+        <div class="unlock-row">
+          <select id="duration-select">
+            <option value="300000">5 min</option>
+            <option value="900000">15 min</option>
+            <option value="1800000" selected>30 min</option>
+            <option value="3600000">60 min</option>
+          </select>
+          <button id="btn-unlock" class="btn-primary">Unlock</button>
+        </div>
+        <p id="unlock-error" class="error hidden"></p>
+      </div>
+
+      <div id="state-unlocked" class="hidden">
+        <p class="message">Site unlocked. Relocking in:</p>
+        <p id="timer" class="timer">--:--</p>
+      </div>
     </div>
     <script type="module" src="blocked.js"></script>
   </body>

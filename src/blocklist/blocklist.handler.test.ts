@@ -14,6 +14,9 @@ beforeEach(() => {
     return Promise.resolve();
   }) as typeof chrome.storage.local.set);
   vi.mocked(chrome.declarativeNetRequest.updateDynamicRules).mockResolvedValue(undefined);
+  vi.mocked(chrome.declarativeNetRequest.getDynamicRules).mockResolvedValue(
+    [] as unknown as void,
+  );
 });
 
 describe('handleAddDomain', () => {

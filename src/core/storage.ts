@@ -34,6 +34,8 @@ export interface UnlockSession {
   expiresAt: number;
   /** Duration the unlock was granted for (ms). */
   duration: number;
+  /** ID of the declarativeNetRequest allow rule to remove on re-lock. */
+  allowRuleId: number;
 }
 
 /** Map of normalised domain → active unlock session. */

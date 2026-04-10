@@ -1,15 +1,25 @@
 /**
- * Focus Guard popup UI.
+ * Focus Guard popup UI — workflow handlers and boot sequence.
  *
+ * Pure helpers, render functions, and timer logic live in popup.render.ts.
  * Communicates with the service worker via chrome.runtime.sendMessage.
- * Uses plain console logging (not createLogger) — createLogger uses process.env.VITEST
- * which is not available in the browser context.
  */
 
 import type { RequestMessage, ResponseMessage } from '@/core/messages';
+import {
+  show,
+  showError,
+  clearError,
+  renderBlocklist,
+  setRegisteredState,
+  setUnregisteredState,
+  attachTimers,
+  startTimerInterval,
+  type SessionResult,
+} from './popup.render';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Messaging
 // ---------------------------------------------------------------------------
 
 function sendMessage(msg: RequestMessage): Promise<ResponseMessage> {
@@ -25,35 +35,6 @@ function sendMessage(msg: RequestMessage): Promise<ResponseMessage> {
       resolve(response);
     });
   });
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function show(el: HTMLElement | null): void {
-  el?.classList.remove('hidden');
-}
-
-function hide(el: HTMLElement | null): void {
-  el?.classList.add('hidden');
-}
-
-function showError(el: HTMLElement | null, msg: string): void {
-  if (!el) return;
-  el.textContent = msg;
-  show(el);
-}
-
-function clearError(el: HTMLElement | null): void {
-  if (!el) return;
-  el.textContent = '';
-  hide(el);
 }
 
 // ---------------------------------------------------------------------------
@@ -74,41 +55,34 @@ const domainList = document.getElementById('domain-list');
 const emptyState = document.getElementById('empty-state');
 
 // ---------------------------------------------------------------------------
-// Render
+// Timer orchestration
 // ---------------------------------------------------------------------------
 
-function renderBlocklist(domains: string[]): void {
-  if (!domainList) return;
-  domainList.innerHTML = '';
+let timerInterval: ReturnType<typeof setInterval> | null = null;
 
-  if (domains.length === 0) {
-    show(emptyState);
-    return;
+async function initTimers(domains: string[]): Promise<void> {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
   }
 
-  hide(emptyState);
-  for (const domain of domains) {
-    const li = document.createElement('li');
-    li.className = 'domain-item';
-    li.innerHTML = `<span class="domain-name">${escapeHtml(domain)}</span>`;
-    domainList.appendChild(li);
-  }
-}
+  const sessionResults = await Promise.all(
+    domains.map(async (domain): Promise<SessionResult | null> => {
+      const trace_id = crypto.randomUUID();
+      const resp = await sendMessage({ type: 'GET_UNLOCK_SESSION', domain, trace_id });
+      if (resp.ok && resp.data !== null) {
+        return { domain, expiresAt: (resp.data as { expiresAt: number }).expiresAt };
+      }
+      return null;
+    }),
+  );
 
-function setRegisteredState(): void {
-  statusDot?.classList.replace('unregistered', 'registered');
-  hide(sectionRegister);
-  show(sectionKeyStatus);
-  show(sectionAddDomain);
-  show(sectionBlocklist);
-}
+  attachTimers(domainList, sessionResults);
 
-function setUnregisteredState(): void {
-  statusDot?.classList.replace('registered', 'unregistered');
-  show(sectionRegister);
-  hide(sectionKeyStatus);
-  hide(sectionAddDomain);
-  hide(sectionBlocklist);
+  const hasActive = sessionResults.some((r) => r !== null);
+  if (!hasActive) return;
+
+  timerInterval = startTimerInterval(domainList);
 }
 
 // ---------------------------------------------------------------------------
@@ -128,13 +102,30 @@ async function init(): Promise<void> {
   const { registered } = statusResp.data as { registered: boolean };
 
   if (registered) {
-    setRegisteredState();
+    setRegisteredState(
+      statusDot,
+      sectionRegister,
+      sectionKeyStatus,
+      sectionAddDomain,
+      sectionBlocklist,
+    );
     const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id });
     if (listResp.ok) {
-      renderBlocklist(listResp.data as string[]);
+      const domains = listResp.data as string[];
+      renderBlocklist(domainList, emptyState, domains);
+      void initTimers(domains).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('initTimers_failed', { error: String(err) });
+      });
     }
   } else {
-    setUnregisteredState();
+    setUnregisteredState(
+      statusDot,
+      sectionRegister,
+      sectionKeyStatus,
+      sectionAddDomain,
+      sectionBlocklist,
+    );
   }
 }
 
@@ -201,8 +192,14 @@ async function handleRegister(): Promise<void> {
       return;
     }
 
-    setRegisteredState();
-    renderBlocklist([]);
+    setRegisteredState(
+      statusDot,
+      sectionRegister,
+      sectionKeyStatus,
+      sectionAddDomain,
+      sectionBlocklist,
+    );
+    renderBlocklist(domainList, emptyState, []);
   } catch (err) {
     showError(registerError, err instanceof Error ? err.message : 'Registration failed');
   } finally {
@@ -238,7 +235,12 @@ async function handleAddDomain(): Promise<void> {
 
     const listResp = await sendMessage({ type: 'GET_BLOCKLIST', trace_id });
     if (listResp.ok) {
-      renderBlocklist(listResp.data as string[]);
+      const domains = listResp.data as string[];
+      renderBlocklist(domainList, emptyState, domains);
+      void initTimers(domains).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('initTimers_failed', { error: String(err) });
+      });
     }
   } catch (err) {
     showError(addDomainError, err instanceof Error ? err.message : 'Failed to add domain');

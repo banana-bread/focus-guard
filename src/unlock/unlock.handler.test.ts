@@ -77,7 +77,9 @@ describe('handleGetAssertionChallenge', () => {
     };
     const resp = await handleGetAssertionChallenge(msg, 't1');
     expect(resp.ok).toBe(true);
-    const data = (resp as { ok: true; data: { challenge: number[]; credentialId: number[]; rpId: string } }).data;
+    const data = (
+      resp as { ok: true; data: { challenge: number[]; credentialId: number[]; rpId: string } }
+    ).data;
     expect(Array.isArray(data.challenge)).toBe(true);
     expect(data.challenge).toHaveLength(32);
     expect(Array.isArray(data.credentialId)).toBe(true);
@@ -90,7 +92,10 @@ describe('handleGetAssertionChallenge', () => {
 // ---------------------------------------------------------------------------
 
 describe('handleVerifyAssertion', () => {
-  function makeVerifyMsg(domain = 'reddit.com', transport?: string): Extract<RequestMessage, { type: 'VERIFY_ASSERTION' }> {
+  function makeVerifyMsg(
+    domain = 'reddit.com',
+    transport?: string,
+  ): Extract<RequestMessage, { type: 'VERIFY_ASSERTION' }> {
     return {
       type: 'VERIFY_ASSERTION',
       authenticatorData: Array.from(new Uint8Array(37)),
@@ -117,12 +122,18 @@ describe('handleVerifyAssertion', () => {
     mockVerifyAssertion.mockResolvedValueOnce({ newSignCounter: 6 });
 
     await handleGetAssertionChallenge(
-      { type: 'GET_ASSERTION_CHALLENGE', operation: 'unlock', domain: 'reddit.com', trace_id: 't0' },
+      {
+        type: 'GET_ASSERTION_CHALLENGE',
+        operation: 'unlock',
+        domain: 'reddit.com',
+        trace_id: 't0',
+      },
       't0',
     );
 
     const resp = await handleVerifyAssertion(makeVerifyMsg('reddit.com'), 't2');
     expect(resp.ok).toBe(true);
+    expect(mockSetCredential).toHaveBeenCalledWith(expect.objectContaining({ signCounter: 6 }));
     expect(chrome.alarms.create).toHaveBeenCalledWith(
       expect.stringContaining('relock:reddit.com'),
       expect.any(Object),
@@ -140,7 +151,12 @@ describe('handleVerifyAssertion', () => {
     mockGetCredential.mockResolvedValue(FAKE_CREDENTIAL);
 
     await handleGetAssertionChallenge(
-      { type: 'GET_ASSERTION_CHALLENGE', operation: 'unlock', domain: 'reddit.com', trace_id: 't0' },
+      {
+        type: 'GET_ASSERTION_CHALLENGE',
+        operation: 'unlock',
+        domain: 'reddit.com',
+        trace_id: 't0',
+      },
       't0',
     );
 
@@ -152,10 +168,17 @@ describe('handleVerifyAssertion', () => {
 
   it('returns ok:false when verifyAssertion rejects (sign counter violation)', async () => {
     mockGetCredential.mockResolvedValue(FAKE_CREDENTIAL);
-    mockVerifyAssertion.mockRejectedValueOnce(new Error('sign_counter_violation: possible cloned authenticator'));
+    mockVerifyAssertion.mockRejectedValueOnce(
+      new Error('sign_counter_violation: possible cloned authenticator'),
+    );
 
     await handleGetAssertionChallenge(
-      { type: 'GET_ASSERTION_CHALLENGE', operation: 'unlock', domain: 'reddit.com', trace_id: 't0' },
+      {
+        type: 'GET_ASSERTION_CHALLENGE',
+        operation: 'unlock',
+        domain: 'reddit.com',
+        trace_id: 't0',
+      },
       't0',
     );
 

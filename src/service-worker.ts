@@ -15,6 +15,7 @@ import {
   handleGetCredentialStatus,
 } from '@/credential/credential.handler';
 import { handleAddDomain, handleGetBlocklist } from '@/blocklist/blocklist.handler';
+import { handleSpaNavigation } from '@/blocklist/spa-navigation-guard';
 import {
   handleGetAssertionChallenge,
   handleVerifyAssertion,
@@ -29,6 +30,10 @@ chrome.alarms.onAlarm.addListener((alarm: chrome.alarms.Alarm) => {
     const domain = alarm.name.slice('relock:'.length);
     void endSession(domain, crypto.randomUUID());
   }
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
+  void handleSpaNavigation(details);
 });
 
 chrome.runtime.onMessage.addListener(

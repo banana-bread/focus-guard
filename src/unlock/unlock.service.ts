@@ -134,5 +134,56 @@ export async function endSession(domain: string, trace_id: string): Promise<void
   await deleteUnlockSession(domain);
   chrome.alarms.clear('relock:' + domain);
 
+  await redirectOpenTabsToBlockedPage(domain, trace_id);
+
   logger.info('unlock_session_ended', { domain, trace_id });
+}
+
+/**
+ * Finds any open tabs on `domain` (or its subdomains) and redirects them to the blocked page.
+ *
+ * Used on relock so that a user idling on an unlocked tab is interrupted at expiry
+ * without needing a new navigation event.
+ *
+ * @param domain - The (normalised) domain being re-locked.
+ * @param trace_id - Correlation ID for logging.
+ */
+async function redirectOpenTabsToBlockedPage(domain: string, trace_id: string): Promise<void> {
+  const matchingTabs = await chrome.tabs.query({
+    url: [`*://${domain}/*`, `*://*.${domain}/*`],
+  });
+  const blockedBase = chrome.runtime.getURL('/blocked/blocked.html');
+  const redirectable = matchingTabs.filter(
+    (t): t is chrome.tabs.Tab & { id: number; url: string } =>
+      t.id !== undefined && typeof t.url === 'string' && t.url.length > 0,
+  );
+  const results = await Promise.allSettled(
+    redirectable.map((t) =>
+      chrome.tabs.update(t.id, {
+        url: `${blockedBase}?domain=${encodeURIComponent(domain)}&url=${encodeURIComponent(t.url)}`,
+      }),
+    ),
+  );
+  let succeeded = 0;
+  results.forEach((result, idx) => {
+    if (result.status === 'fulfilled') {
+      succeeded++;
+      return;
+    }
+    const tab = redirectable[idx];
+    logger.warn('relock_tab_redirect_failed', {
+      domain,
+      trace_id,
+      tab_id: tab?.id,
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      fix_suggestion:
+        'Tab may have been closed mid-flight; safe to ignore unless pattern repeats across tabs',
+    });
+  });
+  logger.info('relock_tabs_redirected', {
+    domain,
+    trace_id,
+    tab_count: succeeded,
+    failed_count: redirectable.length - succeeded,
+  });
 }

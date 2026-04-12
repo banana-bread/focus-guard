@@ -16,3 +16,28 @@ export function normalizeDomain(input: string): string {
   const { hostname } = new URL(withScheme);
   return hostname.replace(/^www\./, '').toLowerCase();
 }
+
+/**
+ * Validates that `input` resolves to a structurally valid domain name.
+ *
+ * Normalises via {@link normalizeDomain} first, then checks for at least
+ * two labels (one dot) and a TLD containing a letter (rejects IPv4 literals).
+ *
+ * @param input - Raw string (URL or bare hostname).
+ * @returns `true` if the normalised hostname is a plausible public domain.
+ */
+export function isValidDomain(input: string): boolean {
+  let hostname: string;
+  try {
+    hostname = normalizeDomain(input);
+  } catch {
+    return false;
+  }
+
+  if (!hostname.includes('.')) return false;
+
+  const tld = hostname.split('.').pop()!;
+  if (!/[a-z]/.test(tld)) return false;
+
+  return true;
+}

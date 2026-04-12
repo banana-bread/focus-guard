@@ -3,7 +3,7 @@
  */
 
 import { createLogger } from '@/core/logger';
-import { normalizeDomain } from '@/shared/domain';
+import { normalizeDomain, isValidDomain } from '@/shared/domain';
 import { getBlocklist, setBlocklist } from '@/blocklist/blocklist.storage';
 import { syncRules } from '@/blocklist/blocklist.rules';
 import type { Blocklist } from '@/core/storage';
@@ -19,6 +19,9 @@ const logger = createLogger('service_worker');
  * @param trace_id - Correlation ID for logging.
  */
 export async function addDomain(rawInput: string, trace_id: string): Promise<void> {
+  if (!isValidDomain(rawInput)) {
+    throw new Error(`Not a valid domain: "${rawInput}"`);
+  }
   const domain = normalizeDomain(rawInput);
   // NOTE: read-modify-write is not concurrency-safe. Two concurrent ADD_DOMAIN messages
   // could both pass the duplicate check and the second write would overwrite the first.

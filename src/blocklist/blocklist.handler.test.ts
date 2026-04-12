@@ -70,6 +70,22 @@ describe('handleAddDomain', () => {
       callsBefore,
     );
   });
+
+  it('rejects invalid domain input and does not update rules', async () => {
+    const msg: Extract<RequestMessage, { type: 'ADD_DOMAIN' }> = {
+      type: 'ADD_DOMAIN',
+      domain: 'fdjkfjdakjlfjalfjdklsa',
+      trace_id: 't1',
+    };
+    const callsBefore = vi.mocked(chrome.declarativeNetRequest.updateDynamicRules).mock.calls
+      .length;
+    const resp = await handleAddDomain(msg, 't1');
+    expect(resp.ok).toBe(false);
+    if (!resp.ok) expect(resp.error).toMatch(/not a valid domain/i);
+    expect(vi.mocked(chrome.declarativeNetRequest.updateDynamicRules).mock.calls.length).toBe(
+      callsBefore,
+    );
+  });
 });
 
 describe('handleGetBlocklist', () => {

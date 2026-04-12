@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeDomain } from '@/shared/domain';
+import { normalizeDomain, isValidDomain } from '@/shared/domain';
 
 describe('normalizeDomain', () => {
   it('returns bare domain unchanged', () => {
@@ -42,5 +42,43 @@ describe('normalizeDomain', () => {
 
   it('strips port', () => {
     expect(normalizeDomain('https://reddit.com:8080/path')).toBe('reddit.com');
+  });
+});
+
+describe('isValidDomain', () => {
+  it('accepts reddit.com', () => {
+    expect(isValidDomain('reddit.com')).toBe(true);
+  });
+
+  it('accepts news.reddit.com', () => {
+    expect(isValidDomain('news.reddit.com')).toBe(true);
+  });
+
+  it('accepts full URL input', () => {
+    expect(isValidDomain('https://www.reddit.com/path?q=1')).toBe(true);
+  });
+
+  it('accepts example.co.uk', () => {
+    expect(isValidDomain('example.co.uk')).toBe(true);
+  });
+
+  it('accepts short labels like a.io', () => {
+    expect(isValidDomain('a.io')).toBe(true);
+  });
+
+  it('rejects keyboard smash without dot', () => {
+    expect(isValidDomain('fdjkfjdakjlfjalfjdklsa')).toBe(false);
+  });
+
+  it('rejects empty string', () => {
+    expect(isValidDomain('')).toBe(false);
+  });
+
+  it('rejects IPv4 literal', () => {
+    expect(isValidDomain('1.2.3.4')).toBe(false);
+  });
+
+  it('rejects unparseable input', () => {
+    expect(isValidDomain('not a domain!!')).toBe(false);
   });
 });

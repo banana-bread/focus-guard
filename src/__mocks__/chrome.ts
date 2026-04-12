@@ -34,6 +34,10 @@ const chrome = {
     updateDynamicRules: vi.fn(),
     getDynamicRules: vi.fn(),
   },
+  tabs: {
+    query: vi.fn().mockResolvedValue([]),
+    update: vi.fn().mockResolvedValue({}),
+  },
 };
 
 (globalThis as unknown as { chrome: typeof chrome }).chrome = chrome;

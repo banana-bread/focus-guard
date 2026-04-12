@@ -30,6 +30,14 @@ export const AAGUID_ALLOWLIST: readonly string[] = [
 ];
 
 /**
+ * Maps known authenticator AAGUIDs to human-readable device names.
+ * Used in popup badge to show the actual key model instead of generic text.
+ */
+export const AAGUID_NAMES: Record<string, string> = {
+  '2fc0579f-8113-47ea-b116-bb5a8db9202a': 'YubiKey 5',
+};
+
+/**
  * Authenticator transports that are permitted for hardware key attestation/assertion.
  * Matches physical security keys over USB, NFC, and BLE.
  */

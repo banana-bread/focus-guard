@@ -26,7 +26,7 @@ export async function handleGetAssertionChallenge(
 ): Promise<ResponseMessage> {
   const domain = msg.domain ?? '';
   try {
-    const { challenge, credentialId, rpId } = await issueChallenge(domain, trace_id);
+    const { challenge, credentialId, rpId } = await issueChallenge(domain, msg.operation, trace_id);
     return okResponse({
       challenge: Array.from(challenge),
       credentialId: Array.from(credentialId),

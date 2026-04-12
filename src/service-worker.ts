@@ -14,7 +14,11 @@ import {
   handleRegisterCredential,
   handleGetCredentialStatus,
 } from '@/credential/credential.handler';
-import { handleAddDomain, handleGetBlocklist } from '@/blocklist/blocklist.handler';
+import {
+  handleAddDomain,
+  handleRemoveDomain,
+  handleGetBlocklist,
+} from '@/blocklist/blocklist.handler';
 import { handleSpaNavigation } from '@/blocklist/spa-navigation-guard';
 import {
   handleGetAssertionChallenge,
@@ -22,6 +26,7 @@ import {
   handleGetUnlockSession,
 } from '@/unlock/unlock.handler';
 import { endSession } from '@/unlock/unlock.service';
+import { handleGetSettings, handleSetSettings } from '@/settings/settings.handler';
 
 const logger = createLogger('service_worker');
 
@@ -82,14 +87,25 @@ async function handleMessage(
       case 'GET_UNLOCK_SESSION':
         sendResponse(await handleGetUnlockSession(msg, trace_id));
         break;
-      default:
+      case 'REMOVE_DOMAIN':
+        sendResponse(await handleRemoveDomain(msg, trace_id));
+        break;
+      case 'GET_SETTINGS':
+        sendResponse(await handleGetSettings(trace_id));
+        break;
+      case 'SET_SETTINGS':
+        sendResponse(await handleSetSettings(msg, trace_id));
+        break;
+      default: {
+        const unhandled = msg as { type: string };
         handled = false;
         logger.warn('message_unhandled', {
-          type: msg.type,
+          type: unhandled.type,
           trace_id,
           fix_suggestion: 'Add a case for this message type in service-worker.ts',
         });
-        sendResponse(errResponse(`Unhandled message type: ${msg.type}`));
+        sendResponse(errResponse(`Unhandled message type: ${unhandled.type}`));
+      }
     }
     if (handled) {
       logger.debug('message_handled', {

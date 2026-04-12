@@ -28,7 +28,7 @@
       <p class="section-title">Hardware Key</p>
       <div class="key-registered-badge">
         <span class="status-dot registered"></span>
-        YubiKey registered
+        <span id="device-name">Security key registered</span>
       </div>
     </div>
 
@@ -38,6 +38,20 @@
       <input id="input-domain" class="input" type="text" placeholder="e.g. reddit.com" />
       <button id="btn-add-domain" class="btn btn-primary btn-full">Add to Blocklist</button>
       <p id="add-domain-error" class="error-text hidden"></p>
+    </div>
+
+    <!-- Settings section: shown when key is registered -->
+    <div id="section-settings" class="section hidden">
+      <p class="section-title">Settings</p>
+      <label class="settings-label"
+        >Default unlock duration
+        <select id="select-duration" class="input">
+          <option value="300000">5 minutes</option>
+          <option value="900000">15 minutes</option>
+          <option value="1800000" selected>30 minutes</option>
+          <option value="3600000">1 hour</option>
+        </select>
+      </label>
     </div>
 
     <!-- Blocklist section: shown when key is registered -->

@@ -12,6 +12,7 @@ import { verifyAssertion } from '@/shared/webauthn';
 import { addAllowRule, removeAllowRule } from '@/blocklist/blocklist.rules';
 import { getUnlockSessions, setUnlockSessions, deleteUnlockSession } from '@/unlock/unlock.storage';
 import { RP_ID, REJECTED_TRANSPORTS } from '@/core/config';
+import type { AssertionOperation } from '@/core/messages';
 import type { UnlockSession } from '@/core/storage';
 
 const logger = createLogger('service_worker');
@@ -26,6 +27,7 @@ const logger = createLogger('service_worker');
  */
 export async function issueChallenge(
   domain: string,
+  operation: AssertionOperation,
   trace_id: string,
 ): Promise<{ challenge: Uint8Array; credentialId: Uint8Array; rpId: string }> {
   const credential = await getCredential();
@@ -33,22 +35,26 @@ export async function issueChallenge(
     throw new Error('No credential registered');
   }
 
-  const challenge = storeChallenge(domain, 'unlock');
-  logger.info('webauthn_challenge_created', { domain, trace_id, ttl_ms: 120_000 });
+  const challenge = storeChallenge(domain, operation);
+  logger.info('webauthn_challenge_created', { domain, operation, trace_id, ttl_ms: 120_000 });
 
   return { challenge, credentialId: credential.credentialId, rpId: RP_ID };
 }
 
 /**
- * Verifies a WebAuthn assertion and creates an unlock session for the domain.
+ * Verifies a WebAuthn assertion: consumes the challenge, checks transport,
+ * verifies the signature, and updates the sign counter.
  *
- * @param domain - The domain being unlocked.
+ * Does NOT create an unlock session — caller is responsible for any
+ * post-verification side effects.
+ *
+ * @param domain - The domain the challenge was issued for.
  * @param assertion - The assertion response components.
- * @param durationMs - How long to unlock the domain for (ms).
+ * @param expectedOperation - The operation that must match the stored challenge.
  * @param trace_id - Correlation ID for logging.
  * @throws {Error} If verification fails or transport is rejected.
  */
-export async function verifyAndUnlock(
+export async function verifyAssertionGeneric(
   domain: string,
   assertion: {
     authenticatorData: Uint8Array;
@@ -56,10 +62,14 @@ export async function verifyAndUnlock(
     signature: Uint8Array;
     transport?: string;
   },
-  durationMs: number,
+  expectedOperation: AssertionOperation,
   trace_id: string,
 ): Promise<void> {
   const pending = consumeChallenge(domain);
+
+  if (pending.operation !== expectedOperation) {
+    throw new Error(`Operation mismatch: expected ${expectedOperation}, got ${pending.operation}`);
+  }
 
   const credential = await getCredential();
   if (!credential) {
@@ -86,6 +96,31 @@ export async function verifyAndUnlock(
   );
 
   await setCredential({ ...credential, signCounter: newSignCounter });
+
+  logger.debug('assertion_verified_generic', { domain, trace_id, operation: expectedOperation });
+}
+
+/**
+ * Verifies a WebAuthn assertion and creates an unlock session for the domain.
+ *
+ * @param domain - The domain being unlocked.
+ * @param assertion - The assertion response components.
+ * @param durationMs - How long to unlock the domain for (ms).
+ * @param trace_id - Correlation ID for logging.
+ * @throws {Error} If verification fails or transport is rejected.
+ */
+export async function verifyAndUnlock(
+  domain: string,
+  assertion: {
+    authenticatorData: Uint8Array;
+    clientDataJSON: Uint8Array;
+    signature: Uint8Array;
+    transport?: string;
+  },
+  durationMs: number,
+  trace_id: string,
+): Promise<void> {
+  await verifyAssertionGeneric(domain, assertion, 'unlock', trace_id);
 
   const expiresAt = Date.now() + durationMs;
   const ruleId = await addAllowRule(domain);

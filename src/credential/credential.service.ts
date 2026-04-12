@@ -8,7 +8,7 @@
 import { generateChallenge } from '@/shared/crypto';
 import { verifyRegistration } from '@/shared/webauthn';
 import type { VerifiedRegistration } from '@/shared/webauthn';
-import { AAGUID_ALLOWLIST, CHALLENGE_TTL_MS } from '@/core/config';
+import { AAGUID_ALLOWLIST, AAGUID_NAMES, CHALLENGE_TTL_MS } from '@/core/config';
 import { getCredential, setCredential } from '@/credential/credential.storage';
 
 interface PendingChallenge {
@@ -81,11 +81,18 @@ export async function registerCredential(
 }
 
 /**
- * Returns whether a credential is currently registered.
+ * Returns credential registration status and device name.
  *
- * @returns `true` if a credential is stored, `false` otherwise.
+ * @returns Object with `registered` flag and optional `deviceName`.
  */
-export async function getCredentialStatus(): Promise<boolean> {
+export async function getCredentialStatus(): Promise<{
+  registered: boolean;
+  deviceName?: string;
+}> {
   const cred = await getCredential();
-  return cred !== undefined;
+  if (!cred) {
+    return { registered: false };
+  }
+  const deviceName = AAGUID_NAMES[cred.aaguid] ?? 'Security key';
+  return { registered: true, deviceName };
 }

@@ -177,6 +177,14 @@ async function init(): Promise<void> {
     window.location.replace(originalUrl ?? `https://${domain}`);
     return;
   }
+
+  // Load default unlock duration from settings
+  const settingsResp = await sendMessage({ type: 'GET_SETTINGS', trace_id });
+  if (settingsResp.ok && durationSelect) {
+    const settings = settingsResp.data as { defaultUnlockDurationMs: number };
+    durationSelect.value = String(settings.defaultUnlockDurationMs);
+  }
+
   showLockedState();
 }
 

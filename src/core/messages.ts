@@ -49,6 +49,15 @@ export type RequestMessage =
   | { type: 'ADD_DOMAIN'; domain: string; trace_id: string }
   | { type: 'GET_BLOCKLIST'; trace_id: string }
   | { type: 'GET_UNLOCK_SESSION'; domain: string; trace_id: string }
+  | {
+      type: 'REMOVE_DOMAIN';
+      domain: string;
+      authenticatorData: number[];
+      clientDataJSON: number[];
+      signature: number[];
+      transport?: string;
+      trace_id: string;
+    }
   | { type: 'GET_SETTINGS'; trace_id: string }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings>; trace_id: string };
 

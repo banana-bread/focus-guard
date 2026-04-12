@@ -7,7 +7,7 @@
 
 import type { RequestMessage, ResponseMessage } from '@/core/messages';
 import { okResponse, errResponse } from '@/core/messages';
-import { addDomain, getBlocklistDomains } from '@/blocklist/blocklist.service';
+import { addDomain, removeDomain, getBlocklistDomains } from '@/blocklist/blocklist.service';
 import { createLogger } from '@/core/logger';
 
 const logger = createLogger('service_worker');
@@ -34,6 +34,40 @@ export async function handleAddDomain(
       fix_suggestion: 'Check that the domain input is a valid URL or hostname',
     });
     return errResponse(err instanceof Error ? err.message : 'Failed to add domain');
+  }
+}
+
+/**
+ * Removes a domain from the blocklist after WebAuthn verification.
+ *
+ * @param msg - The REMOVE_DOMAIN message with assertion data.
+ * @param trace_id - Correlation ID for logging.
+ * @returns A successful response, or an error response if verification/removal fails.
+ */
+export async function handleRemoveDomain(
+  msg: Extract<RequestMessage, { type: 'REMOVE_DOMAIN' }>,
+  trace_id: string,
+): Promise<ResponseMessage> {
+  try {
+    await removeDomain(
+      msg.domain,
+      {
+        authenticatorData: new Uint8Array(msg.authenticatorData),
+        clientDataJSON: new Uint8Array(msg.clientDataJSON),
+        signature: new Uint8Array(msg.signature),
+        ...(msg.transport !== undefined ? { transport: msg.transport } : {}),
+      },
+      trace_id,
+    );
+    return okResponse(null);
+  } catch (err) {
+    logger.error('remove_domain_failed', {
+      trace_id,
+      domain: msg.domain,
+      error: err instanceof Error ? err.message : String(err),
+      fix_suggestion: 'Verify assertion is valid and domain exists in the blocklist',
+    });
+    return errResponse(err instanceof Error ? err.message : 'Failed to remove domain');
   }
 }
 

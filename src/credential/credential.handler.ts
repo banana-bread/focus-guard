@@ -70,7 +70,7 @@ export async function handleRegisterCredential(
  * @returns A successful response containing `{ registered: boolean }`.
  */
 export async function handleGetCredentialStatus(trace_id: string): Promise<ResponseMessage> {
-  const registered = await getCredentialStatus();
-  logger.debug('credential_status_queried', { trace_id, registered });
-  return okResponse({ registered });
+  const status = await getCredentialStatus();
+  logger.debug('credential_status_queried', { trace_id, registered: status.registered });
+  return okResponse(status);
 }

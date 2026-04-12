@@ -64,9 +64,18 @@ export function renderBlocklist(
     const li = document.createElement('li');
     li.className = 'domain-item';
     li.dataset['domain'] = domain;
-    li.innerHTML = `<span class="domain-name">${escapeHtml(domain)}</span>`;
+    li.innerHTML = `<span class="domain-name">${escapeHtml(domain)}</span><button class="btn-delete" data-domain="${escapeHtml(domain)}" aria-label="Remove ${escapeHtml(domain)}" title="Remove">\u00d7</button>`;
     domainList.appendChild(li);
   }
+}
+
+export function setDeviceName(el: HTMLElement | null, name: string): void {
+  if (el) el.textContent = `${name} registered`;
+}
+
+export function renderSettings(selectEl: HTMLSelectElement | null, durationMs: number): void {
+  if (!selectEl) return;
+  selectEl.value = String(durationMs);
 }
 
 export function setRegisteredState(
@@ -75,12 +84,14 @@ export function setRegisteredState(
   sectionKeyStatus: HTMLElement | null,
   sectionAddDomain: HTMLElement | null,
   sectionBlocklist: HTMLElement | null,
+  sectionSettings: HTMLElement | null,
 ): void {
   statusDot?.classList.replace('unregistered', 'registered');
   hide(sectionRegister);
   show(sectionKeyStatus);
   show(sectionAddDomain);
   show(sectionBlocklist);
+  show(sectionSettings);
 }
 
 export function setUnregisteredState(
@@ -89,12 +100,14 @@ export function setUnregisteredState(
   sectionKeyStatus: HTMLElement | null,
   sectionAddDomain: HTMLElement | null,
   sectionBlocklist: HTMLElement | null,
+  sectionSettings: HTMLElement | null,
 ): void {
   statusDot?.classList.replace('registered', 'unregistered');
   show(sectionRegister);
   hide(sectionKeyStatus);
   hide(sectionAddDomain);
   hide(sectionBlocklist);
+  hide(sectionSettings);
 }
 
 // ---------------------------------------------------------------------------

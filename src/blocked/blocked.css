@@ -7,6 +7,8 @@
   --text-muted: #94a3b8;
   --icon-gradient-start: #93c5fd;
   --icon-gradient-end: #1e40af;
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -34,11 +36,12 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-top: 2px solid rgba(59, 130, 246, 0.4);
-  border-radius: 8px;
+  border-radius: 16px;
   padding: 40px;
   max-width: 400px;
   width: 90%;
   text-align: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 .shield-icon {
@@ -98,11 +101,21 @@ body {
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
+  border-radius: 12px;
+  padding: 10px 24px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
 }
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -117,9 +130,18 @@ select {
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 8px 12px;
   font-size: 14px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 .timer {
   font-size: 36px;

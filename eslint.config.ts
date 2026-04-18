@@ -5,7 +5,7 @@ import importX from 'eslint-plugin-import-x';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 export default defineConfig(
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'src/icons/**'] },
 
   eslint.configs.recommended,
 

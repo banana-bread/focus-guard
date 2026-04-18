@@ -30,6 +30,7 @@ export default defineConfig({
         { src: 'src/popup/popup.css', dest: 'popup' },
         { src: 'src/blocked/blocked.html', dest: 'blocked' },
         { src: 'src/blocked/blocked.css', dest: 'blocked' },
+        { src: 'src/icons/icon*.png', dest: 'icons' },
       ],
     }),
   ],

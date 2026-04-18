@@ -134,7 +134,8 @@ export function attachTimers(
     timerSpan.className = 'domain-timer active';
     timerSpan.id = `timer-${result.domain}`;
     timerSpan.textContent = formatTime(result.expiresAt - Date.now());
-    li.appendChild(timerSpan);
+    const btn = li.querySelector('.btn-delete');
+    li.insertBefore(timerSpan, btn);
   }
 }
 

@@ -1,0 +1,1 @@
+See ![alt text](image.png). the x should be on the right, timer in the middle

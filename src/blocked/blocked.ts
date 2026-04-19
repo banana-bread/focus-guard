@@ -44,7 +44,7 @@ const domain = params.get('domain') ?? 'Unknown site';
 const search = window.location.search;
 const urlMarker = '&url=';
 const urlIdx = search.indexOf(urlMarker);
-const originalUrl = urlIdx !== -1 ? search.slice(urlIdx + urlMarker.length) : null;
+const originalUrl = urlIdx !== -1 ? decodeURIComponent(search.slice(urlIdx + urlMarker.length)) : null;
 
 const domainEl = document.getElementById('domain');
 const stateLocked = document.getElementById('state-locked');

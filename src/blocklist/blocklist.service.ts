@@ -154,7 +154,7 @@ export async function removeDomain(
   await setBlocklist(newList);
 
   // Clean up any active unlock session for the removed domain
-  await endSession(domain, trace_id);
+  await endSession(domain, trace_id, false);
 
   // Redirect any tabs stuck on the blocked page back to the original URL
   await unblockBlockedPageTabs(domain, trace_id);

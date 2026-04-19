@@ -156,8 +156,13 @@ export async function getSession(domain: string): Promise<UnlockSession | undefi
  *
  * @param domain - The domain to re-lock.
  * @param trace_id - Correlation ID for logging.
+ * @param shouldRedirect - If false, skips redirecting open tabs to blocked page (used when domain is removed from blocklist).
  */
-export async function endSession(domain: string, trace_id: string): Promise<void> {
+export async function endSession(
+  domain: string,
+  trace_id: string,
+  shouldRedirect: boolean = true,
+): Promise<void> {
   const sessions = await getUnlockSessions();
   const session = sessions[domain];
 
@@ -169,7 +174,9 @@ export async function endSession(domain: string, trace_id: string): Promise<void
   await deleteUnlockSession(domain);
   chrome.alarms.clear('relock:' + domain);
 
-  await redirectOpenTabsToBlockedPage(domain, trace_id);
+  if (shouldRedirect) {
+    await redirectOpenTabsToBlockedPage(domain, trace_id);
+  }
 
   logger.info('unlock_session_ended', { domain, trace_id });
 }
